@@ -1,0 +1,788 @@
+station_id,endpoint_journeys,connections,station_name,bank
+001072,9333,365,"Waterloo Station 3, Waterloo",South
+002696,5629,458,"Waterloo Station 1, Waterloo",South
+300083,3839,409,"Duke Street Hill, London Bridge",South
+001142,3431,398,"Tooley Street, Bermondsey",South
+000960,3334,468,"Hop Exchange, The Borough",South
+002692,2649,343,"Waterloo Station 2, Waterloo",South
+300221,2479,339,"Battersea Power Station, Battersea Park",South
+002587,2372,137,"Wormwood Street, Liverpool Street",North
+000999,2175,144,"Queen Street 1, Bank",North
+200128,2009,142,"Queen Street 2, Bank",North
+200206,2000,390,"Chicheley Street, South Bank",South
+001213,1974,303,"Curlew Street, Shad Thames",South
+001133,1955,359,"Baylis Road, Waterloo",South
+001190,1884,312,"Kennington Lane Rail Bridge, Vauxhall",South
+001000,1841,312,"Vauxhall Cross, Vauxhall",South
+300231,1793,325,"Lambeth Palace Road, Waterloo",South
+300216,1791,326,"Gas Holders, Battersea Park",South
+300005,1761,326,"Ethelburga Estate, Battersea Park",South
+001186,1692,339,"Belvedere Road 1, South Bank",South
+200210,1621,308,"Westbridge Road, Battersea",South
+200183,1605,344,"Battersea Park Road, Nine Elms",South
+300237,1593,314,"Tate Modern, Bankside",South
+010624,1557,330,"Strata, Elephant & Castle",South
+001161,1551,125,"Brushfield Street, Liverpool Street",North
+001017,1521,215,"Great Dover Street, The Borough",South
+001202,1510,135,"Wellington Street , Strand",North
+000984,1384,118,"Finsbury Circus, Liverpool Street",North
+000994,1360,286,"Tanner Street, Bermondsey",South
+001165,1305,298,"Riverlight North, Nine Elms",South
+300242,1302,137,"Allington Street, Victoria",North
+300050,1280,289,"Walworth Square, Walworth",South
+002679,1275,258,"George Row, Bermondsey",South
+200190,1245,293,"Queen's Circus, Battersea Park",South
+002637,1219,277,"Bermondsey Street, Bermondsey",South
+000963,1215,314,"Bankside Mix, Bankside",South
+000991,1215,118,"Crosswall, Tower",North
+001092,1214,123,"Moorfields, Moorgate",North
+000962,1200,273,"Stamford Street, South Bank",South
+001074,1196,99,"Newgate Street , St. Paul's",North
+300014,1196,208,"Falcon Road, Clapham Junction",South
+001067,1190,144,"St. James's Square, St. James's",North
+001100,1174,125,"Strand, Strand",North
+002667,1164,275,"Tower Wharf, Bermondsey",South
+200193,1147,312,"Snowsfields, London Bridge",South
+200077,1143,218,"Vicarage Crescent, Battersea",South
+001080,1133,126,"Great Tower Street, Monument",North
+200133,1128,256,"South Lambeth Road, Vauxhall",South
+200226,1119,115,"Kingsway Southbound, Strand",North
+200212,1118,118,"Blackfriars Station, St. Paul's",North
+300045,1082,228,"Albert Bridge Road, Battersea Park",South
+000961,1081,278,"Union Street, The Borough",South
+022180,1081,111,"Cheapside, Bank",North
+001093,1079,274,"Kennington Cross, Kennington",South
+200201,1062,216,"Battersea Church Road, Battersea",South
+300246,1056,287,"Belvedere Road 2, South Bank",South
+200120,1027,157,"Grant Road East, Clapham Junction",South
+200132,1027,236,"Gaywood  Street, Elephant & Castle",South
+003448,1026,239,"Webber Street , Southwark",South
+300063,1004,290,"Burgess Park Albany Road, Walworth",South
+001118,991,255,"Hampton Street, Walworth",South
+002666,981,131,"Howick Place, Westminster",North
+003492,981,197,"Putney Pier, Wandsworth",South
+300252,978,246,"Canada Water Station, Rotherhithe",South
+000998,976,227,"Lollard Street, Vauxhall",South
+300247,933,240,"Cranmer Road, Stockwell",South
+001189,908,239,"Long Lane , Bermondsey",South
+200079,904,200,"Ram Street, Wandsworth",South
+001007,896,115,"Drury Lane, Covent Garden",North
+003485,892,244,"Tyers Gate, Bermondsey",South
+300249,882,125,"Westminster Pier, Westminster",North
+001070,873,242,"Bricklayers Arms, Borough",South
+001218,871,101,"Flood Street, Chelsea",North
+002703,868,245,"Fire Brigade Pier, Vauxhall",South
+001082,860,253,"Borough Road, Elephant & Castle",South
+200196,856,225,"Simpson Street, Clapham Junction",South
+001061,854,115,"Stonecutter Street, Holborn",North
+200048,852,116,"Page Street, Westminster",North
+001117,842,252,"Lambeth North Station, Waterloo",South
+001048,840,106,"Queen Victoria Street, St. Paul's",North
+001209,840,239,"Empire Square, The Borough",South
+200185,836,233,"St. John's Road, Clapham Junction",South
+001154,826,243,"Kennington Road, Vauxhall",South
+001176,826,248,"Waterloo Road, South Bank",South
+200084,804,208,"Doddington Grove, Kennington",South
+200039,803,230,"Sail Street, Vauxhall",South
+300061,803,212,"Crimscott Street, Bermondsey",South
+001207,794,125,"Tavistock Street, Covent Garden",North
+002694,794,278,"Clapham Common Station, Clapham Common",South
+001219,793,256,"Lower Marsh, Waterloo",South
+000966,792,212,"New Kent Road, The Borough",South
+300096,781,114,"Tallis Street, Temple",North
+001076,778,175,"Walnut Tree Walk, Vauxhall",South
+001212,774,243,"Concert Hall Approach, South Bank",South
+001224,768,224,"Vauxhall Street, Vauxhall",South
+200200,763,195,"Great Suffolk Street, The Borough",South
+001062,762,92,"Braham Street, Aldgate",North
+001078,756,191,"Lambeth Road, Vauxhall",South
+000995,755,138,"Little Argyll Street, West End",North
+001138,754,117,"Elizabeth Bridge, Victoria",North
+300208,753,237,"Lavington Street, Bankside",South
+200202,748,133,"Storey's Gate, Westminster",North
+300051,745,174,"Hibbert Street, Battersea",South
+200001,744,104,"Limerston Street, West Chelsea",North
+003420,743,104,"Sedding Street, Sloane Square",North
+300010,742,191,"Surrey Lane, Battersea",South
+300013,739,185,"Austin Road, Battersea Park",South
+000982,738,115,"Holborn Circus, Holborn",North
+001028,736,130,"William IV Street, Strand",North
+001200,735,243,"Ontario Street, Elephant & Castle",South
+001052,730,133,"Soho Square , Soho",North
+001151,728,133,"Whitehall Place, Strand",North
+001015,724,219,"New Globe Walk, Bankside",South
+200091,724,192,"Wandsworth Town Station, Wandsworth",South
+001144,713,260,"Poured Lines, Bankside",South
+001216,713,217,"Swan Street, The Borough",South
+200101,703,114,"Monument Street, Monument",North
+300207,697,218,"Gauden Road, Clapham",South
+200169,692,190,"Ashley Crescent, Battersea",South
+200094,689,115,"St. Bride Street, Holborn",North
+001205,687,209,"Black Prince Road, Vauxhall",South
+300019,684,187,"Felsham Road, Putney",South
+300060,683,211,"Brandon Street, Walworth",South
+002648,681,224,"Waterloo Bridge, South Bank",South
+001160,674,135,"Craven Street, Strand",North
+300006,670,222,"Clapham South, Clapham South",South
+001145,668,112,"Bucknall Street, Covent Garden",North
+200231,666,111,"Abingdon Green, Westminster",North
+003484,653,101,"Houghton Street, Strand",North
+001059,649,205,"Albert Embankment, Vauxhall",South
+300253,649,197,"Bermondsey Station, Bermondsey",South
+003486,648,86,"St. Luke's Church, Chelsea",North
+000997,647,90,"Worship Street, Shoreditch",North
+003504,647,132,"Moor Street, Soho",North
+300220,643,104,"Farringdon Street, Holborn",North
+300047,641,167,"Alfreda Street, Battersea Park",South
+010629,628,180,"Rotherhithe Roundabout, Rotherhithe",South
+300004,626,172,"Harris Academy, Bermondsey",South
+200179,621,157,"Silverthorne Road, Battersea",South
+003449,616,98,"Breams Buildings, Holborn",North
+003455,611,98,"Arundel Street, Temple",North
+200137,609,176,"Caldwell Street, Stockwell",South
+001095,608,204,"LSBU (Borough Road), Elephant & Castle",South
+001211,607,94,"Bunhill Row, Moorgate",North
+001043,606,85,"Museum of London, Barbican",North
+002683,606,122,"Millbank Tower, Pimlico",North
+200119,605,202,"Dorothy Road, Clapham Junction",South
+001174,598,107,"Alderney Street, Pimlico",North
+003480,596,106,"Smith Square, Westminster",North
+200113,589,153,"Smugglers Way, Wandsworth",South
+001011,584,121,"Argyle Street, Kings Cross",North
+003452,584,126,"Panton Street, West End",North
+200240,584,218,"Ferndale Road, Brixton",South
+300240,584,103,"Lincoln's Inn Fields, Holborn",North
+000971,582,105,"Godliman Street, St. Paul's",North
+200175,581,164,"Wandsworth Rd, Isley Court, Wandsworth Road",South
+003429,580,109,"Abbey Orchard Street, Westminster",North
+003465,580,109,"Eccleston Place, Victoria",North
+200223,575,185,"Ashmole Estate, Oval",South
+000996,573,210,"Borough High Street, The Borough",South
+001184,572,99,"St. Mary Axe, Aldgate",North
+001201,572,100,"Bank of England Museum, Bank",North
+300015,572,198,"Binfield Road, Stockwell",South
+001073,570,178,"Kennington Road Post Office, Oval",South
+001228,569,112,"Southampton Street, Strand",North
+300206,566,210,"Saltoun Road, Brixton",South
+200032,564,180,"Kennington Oval, Oval",South
+002649,561,88,"Sardinia Street, Holborn",North
+300036,561,149,"Teversham Lane, Stockwell",South
+001071,560,91,"Tower Gardens , Tower",North
+200207,559,176,"Hartington Road, Stockwell",South
+001024,556,208,"Park Street, Bankside",South
+200126,556,140,"Usk Road, Clapham Junction",South
+001008,554,98,"Hatton Wall, Holborn",North
+001064,554,105,"Old Street Station, St. Luke's",North
+300224,552,189,"New Spring Gardens Walk, Vauxhall",South
+200211,550,163,"Union Grove, Wandsworth Road",South
+300238,549,206,"Southwark Street, Bankside",South
+001148,547,99,"Queen Mother Sports Centre, Victoria",North
+001208,547,165,"Dickens Square, Borough",South
+300065,547,181,"Clapham Common North Side, Clapham Common",South
+200217,546,134,"Disraeli Road, Putney",South
+200072,545,83,"Houndsditch, Aldgate",North
+003481,541,172,"Rodney Road , Walworth",South
+300059,541,143,"The Blue, Bermondsey",South
+022179,538,114,"Exhibition Road, Knightsbridge",North
+300073,530,184,"Prince of Wales Drive, Battersea Park",South
+300229,529,160,"Sidney Road, Stockwell",South
+002660,527,115,"Frith Street, Soho",North
+300209,527,170,"Albert Square, Stockwell",South
+300225,526,170,"Normandy Road, Stockwell",South
+000980,524,97,"Malet Street, Bloomsbury",North
+200114,522,149,"Orbel Street, Battersea",South
+001170,521,111,"Horseferry Road, Westminster",North
+022171,518,86,"Red Lion Street, Holborn",North
+002695,516,94,"Cadogan Gardens, Chelsea",North
+001180,506,88,"Bourne Street, Belgravia",North
+001153,505,115,"Pall Mall East, West End",North
+200253,499,77,"Fore Street Avenue, Guildhall",North
+000990,497,171,"Cotton Garden Estate, Kennington",South
+002677,494,69,"Natural History Museum, South Kensington",North
+300086,494,90,"Fulham Broadway, Walham Green",North
+001137,485,182,"Harper Road, The Borough",South
+000965,480,98,"Tachbrook Street, Victoria",North
+001040,478,84,"West Smithfield Rotunda, Farringdon",North
+001163,476,121,"Wardour Street, Soho",North
+300025,476,183,"Archbishop's Park, Waterloo",South
+000968,472,108,"Warwick Row, Westminster",North
+300239,471,140,"Victory Place, Walworth",South
+001195,470,98,"St. George's Square, Pimlico",North
+200219,462,144,"Osiers Road, Wandsworth",South
+300062,461,153,"South Bermondsey Station, Bermondsey",South
+003495,460,92,"Wells Street, Fitzrovia",North
+300053,458,80,"Stephendale Road, Sands End",North
+001020,456,85,"Leonard Circus , Shoreditch",North
+003457,455,95,"Rochester Row, Westminster",North
+200208,453,163,"Sugden Road, Clapham",South
+001065,452,85,"Aldersgate Street, Barbican",North
+001056,451,78,"Finsbury Square , Moorgate",North
+001063,449,80,"Wood Street, Guildhall",North
+002691,449,83,"Howland Street, Fitzrovia",North
+200199,448,122,"Stanley Grove, Battersea",South
+003489,447,111,"Broadwick Street, Soho",North
+001068,445,75,"Norton Folgate, Liverpool Street",North
+001045,444,90,"Jewry Street, Aldgate",North
+200189,441,79,"Phene Street, Chelsea",North
+300250,441,102,"Temple Gardens, Temple",North
+000973,431,93,"Bethnal Green Road, Shoreditch",North
+002685,431,88,"South Kensington Station, South Kensington",North
+003451,431,112,"Golden Square, Soho",North
+000985,430,89,"Hatton Garden, Holborn",North
+003507,430,90,"Store Street, Bloomsbury",North
+022159,429,95,"Ebury Bridge, Pimlico",North
+300074,429,91,"Newton Street, Covent Garden",North
+003456,428,64,"Portugal Street, Holborn",North
+001122,427,104,"Ashley Place, Victoria",North
+001090,426,104,"Warren Street Station, Euston",North
+003445,422,90,"Shoreditch High Street, Shoreditch",North
+200173,421,148,"Courland Grove, Wandsworth Road",South
+022170,420,147,"Kennington Station, Kennington",South
+200044,418,94,"New Fetter Lane, Holborn",North
+300079,416,118,"London Street, Paddington",North
+003498,415,155,"Geraldine Street, Elephant & Castle",South
+300070,413,78,"Imperial Wharf Station, Sands End",North
+300222,413,82,"Fore Street, Guildhall",North
+001106,411,106,"Rampayne Street, Pimlico",North
+001135,411,101,"Claverton Street, Pimlico",North
+001229,411,93,"High Holborn , Covent Garden",North
+200096,411,111,"Green Park Station, Mayfair",North
+200176,411,143,"Sheepcote Lane, Battersea",South
+010628,405,148,"Cleaver Street, Kennington",South
+001031,403,68,"Nesham Street, Wapping",North
+001102,403,68,"Leman Street, Aldgate",North
+003462,402,83,"Royal Avenue 2, Chelsea",North
+001155,401,81,"Regency Street, Westminster",North
+001129,400,71,"Sun Street, Liverpool Street",North
+200060,398,93,"Drayton Gardens, West Chelsea",North
+200068,396,92,"Somerset House, Strand",North
+200237,393,78,"Parson's Green , Parson's Green",North
+001192,388,81,"Embankment (Savoy), Strand",North
+003436,388,87,"Derry Street, Kensington",North
+001053,383,81,"Clerkenwell Green, Clerkenwell",North
+200157,381,85,"Fournier Street, Whitechapel",North
+001220,371,89,"Imperial College, Knightsbridge",North
+003432,370,83,"Farringdon Lane, Clerkenwell",North
+200188,370,141,"Neville Gill Close, Wandsworth",South
+001114,369,68,"Pont Street, Knightsbridge",North
+001159,369,71,"Berry Street, Clerkenwell",North
+001103,366,92,"Gloucester Street, Pimlico",North
+003488,366,106,"Charles II Street, West End",North
+022158,363,82,"Exhibition Road Museums 1, South Kensington",North
+300033,362,120,"Putney Rail Station, Putney",South
+003458,361,100,"Waterloo Place, St. James's",North
+001044,360,75,"The Guildhall, Guildhall",North
+300204,360,146,"Victoria Rise, Clapham Common",South
+003461,359,69,"Sloane Avenue, Knightsbridge",North
+001139,357,73,"Carey Street, Holborn",North
+001140,357,81,"Grosvenor Road, Pimlico",North
+022161,357,89,"Vincent Street, Pimlico",North
+300080,354,101,"Culvert Road, Battersea",South
+001177,353,79,"Seville Street, Knightsbridge",North
+001079,352,86,"Endsleigh Gardens, Euston",North
+003467,351,74,"Dock Street, Wapping",North
+200194,350,123,"Clarence Walk, Stockwell",South
+002662,349,91,"Butler Place, Westminster",North
+003425,349,72,"Northington Street , Holborn",North
+001077,344,78,"Royal London Hospital, Whitechapel",North
+200205,343,123,"Montserrat Road , Putney",South
+200023,337,106,"Heath Road, Battersea",South
+300042,337,133,"Upper Richmond Road, Putney",South
+300100,336,148,"Limburg Road, Clapham Junction",South
+003434,331,142,"Sancroft Street, Vauxhall",South
+001097,330,92,"Northumberland Avenue, Strand",North
+200125,327,45,"Putney Bridge Station, Fulham",North
+300202,327,77,"Kings Gate House, Westminster",North
+001075,326,111,"Hyde Park Corner, Hyde Park",North
+300089,326,72,"Ormonde Gate, Chelsea",North
+300031,325,93,"Islington Green, Angel",North
+001141,323,73,"Kingsway, Covent Garden",North
+300076,322,74,"Lots Road, West Chelsea",North
+300094,322,122,"Plough Terrace, Clapham Junction",South
+001032,319,74,"New Inn Yard, Shoreditch",North
+200178,319,75,"Buckingham Gate, Westminster",North
+003430,318,82,"Central House, Aldgate",North
+200056,318,153,"Vauxhall Walk, Vauxhall",South
+003476,313,68,"Hinde Street, Marylebone",North
+300032,313,83,"Victoria & Albert Museum, South Kensington",North
+200010,310,75,"Manresa Road, Chelsea",North
+001171,306,69,"New Road 1 , Whitechapel",North
+003424,305,90,"Broadcasting House, Marylebone",North
+001123,304,89,"Southampton Place, Holborn",North
+022182,302,65,"South Parade, Chelsea",North
+300075,302,67,"Upcerne Road, West Chelsea",North
+001098,300,79,"Lower Thames Street, Monument",North
+002699,299,73,"Snow Hill, Farringdon",North
+001089,298,56,"Queen's Gate (Central), South Kensington",North
+001206,297,61,"Montpelier Street, Knightsbridge",North
+001203,296,84,"Eastbourne Mews, Paddington",North
+300058,296,75,"The Vale, Chelsea",North
+000981,295,84,"British Museum, Bloomsbury",North
+001107,295,75,"Gloucester Road Station, South Kensington",North
+001126,295,91,"North Audley Street, Mayfair",North
+001049,294,72,"Finsbury Leisure Centre, St. Luke's",North
+022160,292,86,"Chelsea Bridge, Pimlico",North
+200097,292,49,"Beryl Road, Hammersmith",North
+001012,290,67,"Christopher Street, Liverpool Street",North
+001035,289,65,"Boston Place, Marylebone",North
+000964,288,89,"Bath Street, St. Luke's",North
+010627,288,72,"Grosvenor Square, Mayfair",North
+200076,288,121,"Westminster Bridge Road, Elephant & Castle",South
+300215,288,121,"St John's Crescent, Brixton",South
+001146,287,74,"Tysoe Street, Clerkenwell",North
+300046,287,116,"Alma Road, Wandsworth",South
+000975,283,71,"Theobald's Road , Holborn",North
+003501,283,57,"Clifton Street, Shoreditch",North
+200052,280,77,"Exhibition Road Museums 2, South Kensington",North
+001197,278,90,"Sackville Street, Mayfair",North
+001191,277,82,"Barbican Centre, Barbican",North
+000972,275,76,"Hampstead Road, Euston",North
+200036,275,79,"Bell Lane, Liverpool Street",North
+003460,271,85,"Warwick Square, Pimlico",North
+022177,269,60,"Christian Street, Whitechapel",North
+000974,268,68,"Guilford Street , Bloomsbury",North
+300001,267,55,"Sandilands Road, Walham Green",North
+001006,266,87,"Percy Street, Bloomsbury",North
+200184,265,71,"Erin Close, Walham Green",North
+300052,262,57,"Parsons Green Station, Parsons Green",North
+300212,262,86,"Birkenhead Street, King's Cross",North
+003496,258,74,"St Mary's Hospital, Paddington",North
+200216,257,98,"Clements Road, Bermondsey",South
+200025,256,66,"London Fields, Hackney Central",North
+001003,255,82,"Chapel Place, Marylebone",North
+200007,254,93,"Holden Street, Battersea",South
+000970,253,67,"Scala Street, Fitzrovia",North
+001046,253,87,"Vauxhall Bridge , Pimlico",North
+001009,252,72,"Taviton Street, Bloomsbury",North
+001172,250,63,"Queen's Gate (South), South Kensington",North
+001029,249,61,"Windsor Terrace, Hoxton",North
+200170,249,81,"Esmond Street, Putney",South
+200059,248,53,"Crisp Road, Hammersmith",North
+200062,247,62,"William Morris Way, Sands End",North
+001221,246,80,"St. George Street, Mayfair",North
+300082,245,62,"Bridge Avenue, Hammersmith",North
+200222,242,73,"Danvers Street, West Chelsea",North
+200115,241,44,"Flamborough Street, Limehouse",North
+003464,239,70,"Green Street, Mayfair",North
+200192,239,84,"Fawcett Close, Battersea",South
+001085,238,69,"Old Quebec Street, Marylebone",North
+001152,236,79,"Marylebone Lane, Marylebone",North
+300044,236,80,"Putney Bridge Road, East Putney",South
+001109,235,82,"Wellington Arch, Hyde Park",North
+300078,234,97,"Oxford Road, Putney",South
+200246,233,50,"Eagle Wharf Road, Hoxton",North
+003454,232,54,"Denyer Street, Knightsbridge",North
+200049,232,52,"St. Katharine's Way, Tower",North
+200180,231,51,"South Park, Sands End",North
+001105,228,62,"LMU Commercial Road, Whitechapel",North
+300243,228,80,"Good's Way, King's Cross",North
+003433,227,57,"Sadlers Sports Centre, Finsbury",North
+300245,227,104,"Clapham Road, Lingham Street, Stockwell",South
+200063,226,105,"Mexfield Road, East Putney",South
+003440,225,71,"Royal Avenue 1, Chelsea",North
+200033,225,50,"Philpot Street, Whitechapel",North
+200043,224,47,"Bishop's Avenue, Fulham",North
+001094,222,65,"Wright's Lane, Kensington",North
+001026,220,67,"Roscoe Street, St. Luke's",North
+001196,218,68,"Vincent Square, Westminster",North
+003473,218,51,"Belgrave Square, Belgravia",North
+003437,217,72,"Curzon Street, Mayfair",North
+300009,217,59,"World's End Place, West Chelsea",North
+300055,217,84,"Stewart's Road, Wandsworth Road",South
+000978,216,75,"Russell Square Station, Bloomsbury",North
+001004,216,67,"Doric Way , Somers Town",North
+300210,216,64,"Halford Road, West Kensington",North
+001084,214,49,"Pindar Street, Liverpool Street",North
+200163,212,60,"Jubilee Plaza, Canary Wharf",North
+200012,211,46,"Stepney Green Station, Stepney",North
+300241,211,54,"Handyside Street, King's Cross",North
+003469,206,59,"Cadogan Place, Knightsbridge",North
+000967,205,73,"Golden Lane, Barbican",North
+001022,205,76,"Brunswick Square, Bloomsbury",North
+010623,205,66,"Greycoat Street , Westminster",North
+001124,204,60,"Sumner Place, South Kensington",North
+200256,204,48,"Sutton Street, Shadwell",North
+001042,202,71,"Woodstock Street, Mayfair",North
+001183,202,72,"Bramham Gardens, Earl's Court",North
+200186,202,88,"Nantes Close, Wandsworth",South
+200203,202,50,"King Edward Street, St Pauls",North
+003500,201,58,"Baldwin Street, St. Luke's",North
+200191,200,93,"Spencer Park, Wandsworth Common",South
+200166,199,47,"Southerton Road, Hammersmith",North
+300203,198,70,"Euston Square Gardens, Euston",North
+003421,197,55,"Red Lion Square, Holborn",North
+003483,197,69,"Fashion Street, Whitechapel",North
+000986,195,42,"Finsbury Library , Finsbury",North
+200064,195,57,"Regent's Row , Haggerston",North
+300037,195,56,"Ravenscourt Park Station, Hammersmith",North
+300228,195,47,"Westferry Circus, Canary Wharf",North
+000969,194,70,"Gower Place , Euston",North
+003494,192,60,"Foley Street, Fitzrovia",North
+200221,192,47,"Crabtree Lane, Fulham",North
+001169,191,49,"Grosvenor Crescent, Belgravia",North
+001132,190,74,"Albert Gate, Hyde Park",North
+200074,190,57,"Bury Place, Holborn",North
+001164,187,69,"Portland Place, Marylebone",North
+003471,187,58,"Chadwell Street, Angel",North
+200151,187,51,"Hoxton Station, Hoxton",North
+000988,186,68,"Great Russell Street, Bloomsbury",North
+001081,185,66,"Liverpool Road (N1 Centre), Angel",North
+200204,185,67,"Northfields, Wandsworth",South
+300087,185,42,"Imperial Road, Sands End",North
+001116,183,57,"Emperor's Gate, South Kensington",North
+200020,183,51,"Shadwell Station, Shadwell",North
+200142,183,54,"Hammersmith Road, Hammersmith",North
+001096,182,78,"Bayswater Road, Hyde Park",North
+003431,181,63,"Grafton Street, Mayfair",North
+001037,178,73,"Park Lane , Hyde Park",North
+300003,178,55,"Eel Brook Common, Walham Green",North
+001179,177,53,"Chelsea Green, Chelsea",North
+022169,174,62,"Wren Street, Holborn",North
+200073,174,41,"Cephas Street, Bethnal Green",North
+001217,172,66,"Serpentine Car Park, Hyde Park",North
+001204,171,54,"Queen's Gate (North), Kensington",North
+200081,171,55,"Coomer Place, West Kensington",North
+001225,170,61,"George Street, Marylebone",North
+001018,169,56,"Phillimore Gardens, Kensington",North
+200090,169,41,"Pennington Street, Wapping",North
+001086,168,61,"Baker Street, Marylebone",North
+200187,168,68,"Morie Street, Wandsworth",South
+300201,168,58,"Coram Street, Bloomsbury",North
+002688,167,59,"Clifford Street, Mayfair",North
+003479,166,51,"Old Brompton Road, South Kensington",North
+300081,166,58,"Haggerston Road, Haggerston",North
+002687,165,57,"Brick Lane Market, Shoreditch",North
+200005,165,71,"New Cavendish Street, Marylebone",North
+300095,164,50,"Michael Road, Walham Green",North
+001039,163,45,"Wapping High Street, Wapping",North
+002669,163,69,"Charlotte Street, Fitzrovia",North
+001134,162,47,"Warwick Road, Olympia",North
+022164,162,58,"Eaton Square (South), Belgravia",North
+001226,161,43,"Macclesfield Rd, St Lukes",North
+300069,161,49,"Harcourt Terrace, West Brompton",North
+003447,159,60,"Gloucester Road (North), Kensington",North
+300230,159,72,"Wynne Road, Stockwell",South
+001025,157,62,"Bolsover Street, Fitzrovia",North
+001167,157,65,"South Wharf Road, Paddington",North
+001002,156,62,"Holy Trinity Brompton, Knightsbridge",North
+022166,156,41,"Albert Gardens, Stepney",North
+200105,155,53,"Bonny Street, Camden Town",North
+003499,154,71,"Prince Consort Road, Knightsbridge",North
+200250,154,43,"Cleveland Way, Stepney",North
+001157,153,61,"Black Lion Gate, Kensington Gardens",North
+200029,153,50,"Finlay Street, Fulham",North
+200249,153,41,"Queen Mary's, Mile End",North
+200034,152,42,"Wapping Lane, Wapping",North
+200083,151,44,"Pritchard's Road, Bethnal Green",North
+001010,150,55,"Cartwright Gardens , Bloomsbury",North
+200116,149,47,"Vereker Road, West Kensington",North
+200239,149,42,"Old Montague Street, Whitechapel",North
+300008,149,49,"Normand Park, West Kensington",North
+300030,149,57,"Thorndike Close, West Chelsea",North
+300077,149,71,"Ingrave Street, Clapham Junction",South
+003477,148,50,"Porchester Place, Paddington",North
+001051,147,47,"Shoreditch Park, Hoxton",North
+003427,147,57,"Fanshaw Street, Hoxton",North
+200026,147,60,"Greenland Road, Camden Town",North
+300018,147,46,"Charing Cross Hospital, Hammersmith",North
+002701,146,52,"Columbia Road, Shoreditch",North
+300054,146,42,"Chesilton Road, Fulham",North
+002678,143,50,"Farm Street, Mayfair",North
+003444,143,50,"Penywern Road, Earl's Court",North
+003482,143,50,"Beaumont Street, Marylebone",North
+300043,142,49,"St. Peter's Terrace, Fulham",North
+200198,141,64,"Seymour Place, Marylebone",North
+300099,141,60,"Adeline Place, Bloomsbury",North
+200016,140,58,"Castlehaven Road, Camden Town",North
+003450,139,62,"Great Titchfield Street, Fitzrovia",North
+200152,139,43,"Pitfield Street North,Hoxton",North
+200238,138,43,"Westferry DLR, Limehouse",North
+001069,137,40,"Eaton Square, Belgravia",North
+022174,137,55,"Granby Street, Shoreditch",North
+200156,137,42,"Pott Street, Bethnal Green",North
+200088,136,51,"Clarges Street, Mayfair",North
+200229,136,51,"Fulham Park Road, Fulham",North
+001182,135,46,"Notting Hill Gate Station, Notting Hill",North
+300211,135,55,"Ossulston Street, Somers Town",North
+200106,134,65,"Spanish Road, Clapham Junction",South
+200248,134,47,"Pitfield Street Central, Hoxton",North
+001047,133,36,"Falkirk Street, Hoxton",North
+200171,132,34,"Peterborough Road, Sands End",North
+300093,132,37,"Park Lane, Mayfair",North
+003439,131,56,"Tavistock Place, Bloomsbury",North
+200051,131,41,"Percival Street, Finsbury",North
+000992,130,46,"St. John Street, Finsbury",North
+001131,130,50,"Graham Street, Angel",North
+200099,130,40,"Upper Bank Street, Canary Wharf",North
+003493,129,44,"South Audley Street, Mayfair",North
+001150,128,55,"Queensway, Kensington Gardens",North
+001230,127,54,"Millennium Hotel, Mayfair",North
+003470,127,46,"Great Percy Street, Clerkenwell",North
+200098,127,42,"Aintree Street, Fulham",North
+200008,126,47,"Portman Square, Marylebone",North
+300091,126,52,"Hortensia Road, West Brompton",North
+001162,124,58,"Dorset Square, Marylebone",North
+003459,123,45,"Collingham Gardens, Earl's Court",North
+200147,123,36,"Salmon Lane, Limehouse",North
+200149,123,47,"Watney Street, Shadwell",North
+300012,123,43,"Irene Road, Parsons Green",North
+001034,122,51,"Bruton Street, Mayfair",North
+001231,122,57,"Queen's Gate, Kensington Gardens",North
+200153,122,36,"Blythe Road, Olympia",North
+001222,121,32,"Goswell Road (City Uni), Finsbury",North
+003423,121,44,"Maida Vale, Maida Vale",North
+200021,121,39,"Hermitage Court, Wapping",North
+200058,121,49,"Northdown Street, King's Cross",North
+200028,120,41,"Elysium Place, Fulham",North
+200165,120,46,"Wellington Row, Bethnal Green",North
+022165,119,41,"Fisherman's Walk West, Canary Wharf",North
+000983,118,51,"Euston Road, Euston",North
+003497,117,41,"Rathbone Street, Fitzrovia",North
+001083,116,50,"Commercial Street, Shoreditch",North
+300027,116,30,"Mile End Park Leisure Centre, Mile End",North
+300205,116,40,"Cromer Street, Bloomsbury",North
+001054,115,43,"East Road, Hoxton",North
+003446,113,49,"De Vere Gardens, Kensington",North
+200003,113,36,"Cheshire Street, Bethnal Green",North
+300068,112,48,"Humbolt Road, Fulham",North
+022183,109,38,"Crinan Street, King's Cross",North
+001156,108,50,"Bedford Way, Bloomsbury",North
+002633,108,37,"Palace Gardens Terrace, Notting Hill",North
+000979,106,31,"Wenlock Road , Hoxton",North
+001108,105,38,"North Wharf Road, Paddington",North
+200159,105,40,"Goldsmith's Row, Haggerston",North
+200177,105,63,"Santos Road, Wandsworth",South
+300035,105,32,"Carnegie Street, King's Cross",North
+001038,104,37,"Harrington Square 1, Camden Town",North
+001121,104,37,"Lexham Gardens, Kensington",North
+200136,104,46,"BBC White City, White City",North
+300092,103,32,"Hertford Road, De Beauvoir Town",North
+200040,102,44,"Broomhouse Lane, Parsons Green",North
+200069,102,38,"Knaresborough Place, Earl's Court",North
+300101,101,33,"Little Brook Green, Brook Green",North
+001060,100,42,"Torrens Street, Angel",North
+001113,100,46,"Trebovir Road, Earl's Court",North
+200135,100,35,"Selby Street, Whitechapel",North
+200013,99,34,"Aston Street, Stepney",North
+300038,99,38,"Star Road, West Kensington",North
+002690,97,38,"City Road, Angel",North
+200182,97,36,"Rainville Road, Hammersmith",North
+300040,97,40,"Ada Street, Hackney Central",North
+001013,95,53,"St. Chad's Street, King's Cross",North
+003490,95,44,"Southwick Street, Paddington",North
+300023,95,43,"All Saints Church, Portobello",North
+001050,93,43,"Park Road (Baker Street), The Regent's Park",North
+200215,93,48,"Greyhound Road, Hammersmith",North
+300024,93,42,"Dunston Road , Haggerston",North
+300028,92,44,"Everington Street, Fulham",North
+001227,91,44,"Devonshire Terrace, Bayswater",North
+200066,91,26,"Import Dock, Canary Wharf",North
+001016,90,39,"Hereford Road, Bayswater",North
+300021,90,32,"Podium, Queen Elizabeth Olympic Park",North
+300049,89,25,"Aylward Street, Stepney",North
+300064,89,33,"Ranelagh Gardens, Fulham",North
+001019,88,34,"Ampton Street , Clerkenwell",North
+001088,88,49,"Triangle Car Park, Hyde Park",North
+200002,88,27,"Jubilee Street, Stepney",North
+200086,88,32,"Ilchester Gardens, Bayswater",North
+000989,87,29,"Murray Grove , Hoxton",North
+001036,86,45,"Crawford Street, Marylebone",North
+001143,86,51,"Kensington Church Street, Kensington",North
+001193,86,49,"Kensington Gore, Knightsbridge",North
+200011,86,36,"Furze Green, Bow",North
+300020,86,31,"West Kensington Station, West Kensington",North
+200047,85,40,"Bethnal Green Garden, Bethnal Green",North
+200255,85,33,"Devons Road, Bow",North
+001057,84,40,"Hardwick Street, Clerkenwell",North
+010630,84,46,"George Place Mews, Marylebone",North
+001214,83,26,"Kensington Olympia Station, Olympia",North
+200155,83,24,"Gascoyne Road, Victoria Park",North
+200110,81,45,"Bishop's Bridge Road West, Bayswater",North
+200148,81,35,"Ansell House, Stepney",North
+001005,80,37,"Eversholt Street , Camden Town",North
+200038,80,26,"Ackroyd Drive, Bow",North
+300235,79,40,"York Way, Kings Cross",North
+022176,76,29,"Reardon Street, Wapping",North
+200006,76,20,"Hewison Street, Old Ford",North
+200071,76,32,"Hoxton Street, Hoxton",North
+200022,75,35,"Saunders Ness Road, Cubitt Town",North
+200234,75,24,"Bancroft Road, Bethnal Green",North
+001023,74,34,"River Street , Clerkenwell",North
+200162,74,33,"Watney Market, Stepney",North
+001173,73,31,"Gloucester Terrace, Bayswater",North
+200209,73,37,"Shepherd's Bush Road North, Shepherd's Bush",North
+200045,72,30,"Garnet Street, Shadwell",North
+300097,71,27,"Gwendwr Road, West Kensington",North
+001033,70,44,"Paddington Street, Marylebone",North
+001187,70,24,"St. John's Wood Road, St. John's Wood",North
+002680,70,36,"Harrowby Street, Marylebone",North
+002686,69,23,"Royal College Street, Camden Town",North
+200167,68,26,"Twig Folly Bridge, Mile End",North
+002589,67,35,"Pembridge Villas, Notting Hill",North
+200042,67,37,"York Hall, Bethnal Green",North
+200123,66,25,"Burdett Road, Mile End",North
+200131,66,32,"Clarkson Street, Bethnal Green",North
+200235,66,23,"Manbre Road, Hammersmith",North
+200129,65,24,"Charlotte Terrace, Angel",North
+001066,64,35,"Calshot Street , King's Cross",North
+001166,64,33,"Bell Street , Marylebone",North
+002682,64,37,"Turquoise Island, Notting Hill",North
+200214,64,42,"Woodstock Grove, Shepherd's Bush",North
+001101,63,31,"Knightsbridge, Hyde Park",North
+200172,63,28,"Lansdowne Road, Ladbroke Grove",North
+300098,63,30,"Hurlingham Park, Parsons Green",North
+200118,62,32,"Albert Street, Camden Town",North
+200230,62,32,"Maplin Street, Mile End",North
+001194,61,35,"Westminster University, Marylebone",North
+200141,61,29,"Westfield Ariel Way, White City",North
+022172,60,12,"Bromley High Street, Bow",North
+200241,60,34,"Bonner Gate, Victoria Park",North
+003468,59,32,"Margery Street, Clerkenwell",North
+200227,59,37,"Westfield Library Corner, Shepherd's Bush",North
+300071,59,33,"Elgin Avenue, Maida Hill",North
+300234,59,28,"Stratford Station, Stratford",North
+003435,58,23,"Gloucester Road (Central), South Kensington",North
+003463,58,38,"Argyll Road, Kensington",North
+200158,58,23,"Whiston Road, Haggerston",North
+001112,57,34,"Nutford Place, Marylebone",North
+200050,57,14,"Naval Row, Blackwall",North
+001188,56,23,"London Zoo Car Park, The Regent's Park",North
+003502,56,23,"Palissy Street, Shoreditch",North
+200017,56,36,"Lancaster Gate , Bayswater",North
+001001,55,26,"West Cromwell Road, Earl's Court",North
+200252,55,23,"Bow Church Station, Bow",North
+003426,54,27,"Lansdowne Drive, Hackney Central",North
+200146,54,10,"Newby Place, Poplar",North
+200213,54,31,"Durant Street, Bethnal Green",North
+003506,53,37,"Stanhope Gate, Mayfair",North
+200078,53,16,"Aberfeldy Street, Poplar",North
+300011,53,23,"Victoria Park Road, Hackney Central",North
+001110,52,34,"Palace Gate, Kensington Gardens",North
+002641,52,25,"New North Road 2, Hoxton",North
+010625,52,27,"Penfold Street, Marylebone",North
+001178,51,21,"Cleveland Gardens, Bayswater",North
+200145,51,25,"Gloucester Avenue, Camden Town",North
+300090,51,31,"Blenheim Crescent, Ladbroke Grove",North
+200053,50,21,"Killick Street, King's Cross",North
+300041,50,22,"Finnis Street, Bethnal Green",North
+001027,49,33,"Warwick Avenue Station, Maida Vale",North
+003491,49,24,"Princes Square, Bayswater",North
+010632,49,19,"Kensington Town Hall, Kensington",North
+200027,49,18,"Ford Road, Old Ford",North
+200150,49,14,"Cantrell Road, Bow",North
+200195,49,25,"St Martins Close, Camden Town",North
+200070,48,29,"Arlington Road, Camden Town",North
+200134,48,21,"Albany Street, The Regent's Park",North
+001223,47,21,"Buxton Street 1, Shoreditch",North
+002693,47,30,"Shouldham Street, Marylebone",North
+200247,47,21,"Globe Town Market, Bethnal Green",North
+300056,47,27,"Mile End Stadium, Mile End",North
+002635,46,19,"Agar Grove, Camden Town",North
+022175,46,17,"Canton Street, Poplar",North
+200112,46,19,"Cadogan Close, Victoria Park",North
+300072,46,21,"Broadley Terrace, Marylebone",North
+003428,45,25,"Pancras Road, King's Cross",North
+200154,45,23,"Hansard Mews, Holland Park",North
+200242,45,16,"Merchant Street, Bow",North
+001210,44,30,"Nevern Place, Earl's Court",North
+200244,44,21,"Hollybush Gardens, Bethnal Green",North
+001128,43,28,"Westbourne Green, Westbourne",North
+200181,43,18,"Richmond Way, Shepherd's Bush",North
+300213,43,28,"Monier Road, Hackney Wick",North
+300236,43,31,"Bevington Road West, North Kensington",North
+200109,42,18,"Alpha Grove, Millwall",North
+001091,41,17,"St. John's Wood Church, The Regent's Park",North
+001120,41,32,"Chepstow Villas, Notting Hill",North
+300034,41,19,"St. Mark's Road, North Kensington",North
+001099,40,24,"Frampton Street, Paddington",North
+002636,40,31,"Prince Albert Road, The Regent's Park",North
+003442,40,19,"Abingdon Villas, Kensington",North
+200057,40,13,"Belford House, Haggerston",North
+200251,40,21,"Bow Road Station, Bow",North
+000976,39,21,"Longford Street, The Regent's Park",North
+001041,39,29,"Westbourne Grove, Bayswater",North
+001147,39,25,"Clifton Road, Maida Vale",North
+003422,39,12,"Charlbert Street, St. John's Wood",North
+200041,38,19,"Antill Road, Mile End",North
+200102,38,23,"Harford Street, Mile End",North
+200174,38,24,"Mostyn Grove, Bow",North
+200161,37,25,"Clinton Road, Mile End",North
+200218,37,9,"Addison Road, Holland Park",North
+003487,35,23,"Campden Hill Road, Notting Hill",North
+200004,35,17,"Lightermans Road, Millwall",North
+200080,35,16,"Russell Gardens, Olympia",North
+200082,35,22,"St. Mary & St. Michael Church, Stepney",North
+200122,34,26,"Hawley Crescent, Camden Town",North
+300039,34,18,"Wendon Street, Old Ford",North
+300067,34,10,"Grenfell Road, Avondale",North
+000993,33,19,"Drummond Street , Euston",North
+001130,33,15,"Grove End Road, St. John's Wood",North
+002670,33,17,"Paddington Green, Paddington",North
+200061,33,17,"Westfield Southern Terrace ,Shepherd's Bush",North
+200037,32,14,"Rectory Square, Stepney",North
+200220,32,24,"Blythe Road West, Shepherd's Bush",North
+200236,32,9,"Greenberry Street, St.John's Wood",North
+001055,31,26,"Wellington Road, St. John's Wood",North
+003505,31,20,"Marloes Road, Kensington",North
+001199,30,12,"The Tennis Courts, The Regent's Park",North
+200024,30,19,"Queensbridge Road, Haggerston",North
+200030,30,19,"Driffield Road, Old Ford",North
+002585,29,12,"Orsett Terrace, Bayswater",North
+010621,29,19,"Upper Grosvenor Street, Mayfair",North
+200093,29,17,"Thurtle Road, Haggerston",North
+200121,29,20,"Shoreditch Court, Haggerston",North
+300226,29,16,"Copper Box Arena, Queen Elizabeth Olympic Park",North
+300007,28,12,"Rifle Place, Avondale",North
+001136,27,15,"London Zoo,  The Regent's Park",North
+200019,27,13,"Malmesbury Road, Bow",North
+300048,27,15,"Stainsby Road , Poplar",North
+300200,25,15,"East Village, Queen Elizabeth Olympic Park",North
+002698,24,13,"Aberdeen Place, St. John's Wood",North
+200108,24,16,"Bishop's Bridge Road East, Bayswater",North
+200138,24,14,"Heron Quays DLR, Canary Wharf",North
+200197,24,18,"Barons Court Station, West Kensington",North
+001030,23,13,"Lisson Grove, St. John's Wood",North
+200067,23,17,"Princedale Road , Holland Park",North
+300057,23,18,"Westbourne Park Road, Portobello",North
+022167,22,8,"Millharbour, Millwall",North
+200014,22,17,"Gunmakers Lane, Old Ford",North
+200046,22,13,"Napier Avenue, Millwall",North
+300233,22,15,"Aquatic Centre, Queen Elizabeth Olympic Park",North
+300022,21,10,"Evesham Street, Avondale",North
+300085,21,11,"Freston Road, Avondale",North
+001115,20,13,"Ilchester Place, Kensington",North
+003441,20,13,"Vicarage Gate, Kensington",North
+200031,20,16,"East Ferry Road, Cubitt Town",North
+300026,20,13,"All Saints' Road, Portobello",North
+002665,19,9,"Lord's, St. John's Wood",North
+022178,19,17,"Lindfield Street, Poplar",North
+001175,18,12,"Mallory Street, Marylebone",North
+022173,18,15,"Old Ford Road, Bethnal Green",North
+010631,16,12,"Holland Park, Kensington",North
+200018,16,6,"Spindrift Avenue, Millwall",North
+200065,16,11,"Lansdowne Walk, Ladbroke Grove",North
+200224,16,9,"Colet Gardens, Hammersmith",North
+200168,15,10,"Southern Grove, Bow",North
+200009,14,8,"Stebondale Street, Cubitt Town",North
+200089,14,10,"Chrisp Street Market, Poplar",North
+200124,14,8,"Clarendon Road, Avondale",North
+300088,14,9,"Queensdale Road, Shepherd's Bush",North
+300244,14,11,"The Metropolitan, Portobello",North
+200111,13,9,"Abbotsbury Road, Holland Park",North
+200127,13,12,"East India DLR, Blackwall",North
+200233,13,12,"South Quay East, Canary Wharf",North
+300217,13,5,"Here East North, Queen Elizabeth Olympic Park",North
+300227,13,10,"Timber Lodge, Queen Elizabeth Olympic Park",North
+200243,10,8,"St. John's Park, Cubitt Town",North
+001111,7,5,"St. Pancras Way, Camden Town",North
+200015,7,6,"Ladbroke Grove Central, Ladbroke Grove",North
+200143,7,7,"Lancaster Drive, Blackwall",North
+200035,6,5,"Walmer Road, Avondale",North
+200092,6,5,"Mudchute DLR, Cubitt Town",North
+300219,6,3,"Here East South, Queen Elizabeth Olympic Park",North
+200160,5,4,"Langdon Park, Poplar",North
+200232,5,5,"Preston's Road, Cubitt Town",North
+200054,4,3,"Jubilee Crescent, Cubitt Town",North
+200254,4,4,"Teviot Street, Poplar",North
+300029,1,1,"Lee Valley VeloPark, Queen Elizabeth Olympic Park",North
+300084,1,1,"Sirdar Road, Avondale",North

@@ -1,0 +1,5 @@
+origin_bank,destination_bank,unique_pairs,total_journeys,journey_share_pct
+North,North,125812,493844,69.00259749695748
+North,South,24667,73810,10.313138807498788
+South,North,23506,76291,10.659797761318114
+South,South,12918,71744,10.02446593422562

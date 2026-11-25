@@ -1,0 +1,39 @@
+station_id,endpoint_journeys,connections,station_name,bank
+001072,4093,27,"Waterloo Station 3, Waterloo",South
+002696,668,6,"Waterloo Station 1, Waterloo",South
+002587,634,4,"Wormwood Street, Liverpool Street",North
+001074,490,2,"Newgate Street , St. Paul's",North
+001161,411,2,"Brushfield Street, Liverpool Street",North
+300083,377,2,"Duke Street Hill, London Bridge",South
+200226,367,2,"Kingsway Southbound, Strand",North
+000999,357,2,"Queen Street 1, Bank",North
+200212,284,2,"Blackfriars Station, St. Paul's",North
+001048,274,2,"Queen Victoria Street, St. Paul's",North
+003449,247,2,"Breams Buildings, Holborn",North
+022180,236,1,"Cheapside, Bank",North
+000984,226,1,"Finsbury Circus, Liverpool Street",North
+300231,188,1,"Lambeth Palace Road, Waterloo",South
+001017,179,1,"Great Dover Street, The Borough",South
+001092,173,1,"Moorfields, Moorgate",North
+001061,146,1,"Stonecutter Street, Holborn",North
+001080,141,1,"Great Tower Street, Monument",North
+001145,133,1,"Bucknall Street, Covent Garden",North
+200128,133,1,"Queen Street 2, Bank",North
+200253,121,1,"Fore Street Avenue, Guildhall",North
+001142,120,1,"Tooley Street, Bermondsey",South
+001063,119,1,"Wood Street, Guildhall",North
+200101,118,1,"Monument Street, Monument",North
+001062,108,1,"Braham Street, Aldgate",North
+001218,105,1,"Flood Street, Chelsea",North
+300005,105,1,"Ethelburga Estate, Battersea Park",South
+000971,103,1,"Godliman Street, St. Paul's",North
+000982,103,1,"Holborn Circus, Holborn",North
+001201,103,1,"Bank of England Museum, Bank",North
+200001,103,1,"Limerston Street, West Chelsea",North
+300014,103,1,"Falcon Road, Clapham Junction",South
+000985,101,1,"Hatton Garden, Holborn",North
+000997,101,1,"Worship Street, Shoreditch",North
+001040,101,1,"West Smithfield Rotunda, Farringdon",North
+300220,101,1,"Farringdon Street, Holborn",North
+000991,97,1,"Crosswall, Tower",North
+001043,97,1,"Museum of London, Barbican",North

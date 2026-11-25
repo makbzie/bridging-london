@@ -1,0 +1,812 @@
+---
+title: "Bridging London | Spatial Analysis"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+---
+## Overview
+
+This document explores the spatial structure of London's Santander Cycles network using historical journey records and docking station locations. Origin–destination relationships are represented geographically, enabling the calculation of straight-line distances and the classification of journeys according to their relationship with the River Thames. The resulting analysis identifies observed cross-river cycling patterns and establishes a comparative framework for subsequent network routing and connectivity analysis.
+
+
+```{r setup, message=FALSE, warning=FALSE}
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(leaflet)
+library(scales)
+library(ggspatial)
+library(ggrepel)
+
+dir.create("outputs/web", recursive = TRUE, showWarnings = FALSE)
+dir.create("data/raw/map_tiles", recursive = TRUE, showWarnings = FALSE)
+```
+
+```{r import-processed-data}
+stations_sf <- readRDS("data/processed/stations_wgs84.rds")
+stations_bng <- readRDS("data/processed/stations_bng.rds")
+od_pairs <- readRDS("data/processed/od_pairs.rds")
+thames_bng <- readRDS("data/processed/thames_bng.rds")
+
+# Confirm spatial compatibility
+stopifnot(
+  st_crs(stations_bng) == st_crs(thames_bng)
+)
+
+# Inspect imported datasets
+dim(stations_bng)
+dim(od_pairs)
+sum(od_pairs$journeys)
+stopifnot(
+  st_crs(stations_bng) == st_crs(27700),
+  !anyNA(stations_bng$station_id),
+  !anyDuplicated(stations_bng$station_id),
+  all(st_is_valid(stations_bng)),
+  all(!st_is_empty(stations_bng)),
+  all(is.finite(od_pairs$journeys) & od_pairs$journeys > 0),
+  !anyDuplicated(od_pairs[c("origin_id", "destination_id")])
+)
+journey_total <- sum(od_pairs$journeys)
+```
+
+```{r visual-identity}
+col_station <- "#173F5F"
+col_thames <- "#82B5D1"
+col_cross <- "#D97706"
+col_same <- "#64748B"
+col_background <- "#F5F5F2"
+```
+
+```{r define-map-extent}
+# Determine the spatial extent of docking stations
+study_bbox <- st_bbox(stations_bng)
+
+# Add a 1 km margin around the network
+x_limits <- c(
+  study_bbox["xmin"] - 1000,
+  study_bbox["xmax"] + 1000
+)
+
+y_limits <- c(
+  study_bbox["ymin"] - 1000,
+  study_bbox["ymax"] + 1000
+)
+```
+
+## Origin–Destination Spatial Analysis
+
+Straight-line distances provide a geographical baseline against which modelled cycling routes can be compared. Docking stations are subsequently classified according to their position relative to the River Thames.
+
+
+```{r calculate-direct-distances}
+# Match origins and destinations to spatial station records
+origin_index <- match(
+  od_pairs$origin_id,
+  stations_bng$station_id
+)
+
+destination_index <- match(
+  od_pairs$destination_id,
+  stations_bng$station_id
+)
+
+# Validate matching
+stopifnot(
+  !anyNA(origin_index),
+  !anyNA(destination_index)
+)
+
+# Calculate pairwise distances in kilometres
+od_pairs$direct_km <- as.numeric(
+  st_distance(
+    stations_bng[origin_index, ],
+    stations_bng[destination_index, ],
+    by_element = TRUE
+  )
+) / 1000
+
+summary(od_pairs$direct_km)
+```
+
+```{r inspect-direct-distances}
+ggplot(od_pairs, aes(x = direct_km)) +
+
+  geom_histogram(
+    binwidth = 0.25,
+    fill = col_station,
+    colour = "white"
+  ) +
+
+  labs(
+    title = "Direct Distance Between Docking Stations",
+    subtitle = "Unique origin-destination pairs | March 2026",
+    x = "Straight-line distance (km)",
+    y = "Number of OD pairs"
+  ) +
+
+  theme_minimal()
+```
+
+```{r create-bank-polygons}
+# Construct rectangular study area
+study_area <- st_as_sfc(
+  st_bbox(
+    c(
+      xmin = as.numeric(x_limits[1]),
+      ymin = as.numeric(y_limits[1]),
+      xmax = as.numeric(x_limits[2]),
+      ymax = as.numeric(y_limits[2])
+    ),
+    crs = st_crs(27700)
+  )
+)
+
+# Combine and validate the river geometry
+river <- st_union(
+  st_make_valid(thames_bng)
+)
+
+# Subtract the Thames from the study area
+land_geometry <- st_difference(
+  study_area,
+  river
+)
+
+# Separate disconnected land polygons
+land_parts <- st_cast(
+  st_collection_extract(land_geometry, "POLYGON"),
+  "POLYGON"
+)
+
+banks <- st_sf(
+  bank_id = seq_along(land_parts),
+  geometry = land_parts
+)
+
+# Inspect polygon areas
+banks$area_km2 <- as.numeric(st_area(banks)) / 1e6
+
+banks
+```
+
+```{r inspect-bank-polygons}
+ggplot() +
+
+  geom_sf(
+    data = banks,
+    aes(fill = factor(bank_id)),
+    colour = NA,
+    alpha = 0.5
+  ) +
+
+  geom_sf(
+    data = thames_bng,
+    fill = col_thames,
+    colour = NA
+  ) +
+
+  geom_sf(
+    data = stations_bng,
+    colour = col_station,
+    size = 0.8
+  ) +
+
+  coord_sf(
+    crs = st_crs(27700),
+    xlim = as.numeric(x_limits),
+    ylim = as.numeric(y_limits),
+    expand = FALSE,
+    datum = NA
+  ) +
+
+  labs(
+    title = "River Bank Classification",
+    fill = "Land polygon"
+  ) +
+
+  theme_void()
+```
+
+```{r assign-station-banks}
+# Use interior reference locations on the northern/southern edges of the
+# study rectangle, not the order returned by GEOS.
+stopifnot(nrow(banks) == 2L, all(st_is_valid(banks)))
+anchors <- st_as_sf(
+  data.frame(bank = c("North", "South"),
+             x = rep(mean(x_limits), 2),
+             y = c(y_limits[2] - 100, y_limits[1] + 100)),
+  coords = c("x", "y"), crs = 27700
+)
+anchor_matches <- st_within(anchors, banks)
+stopifnot(all(lengths(anchor_matches) == 1L),
+          length(unique(unlist(anchor_matches))) == 2L)
+banks$bank <- NA_character_
+banks$bank[unlist(anchor_matches)] <- anchors$bank
+
+# Assign only unambiguous point-in-polygon matches.
+bank_matches <- st_within(stations_bng, banks)
+stations_bng$bank <- vapply(bank_matches, function(x) {
+  if (length(x) == 1L) banks$bank[x] else NA_character_
+}, character(1))
+
+# Independent known-location sanity check using the station names.
+# These named areas must be present and on their expected banks.
+check_north <- trimws(stations_bng$station_name) == "Bonny Street, Camden Town"
+check_south <- trimws(stations_bng$station_name) == "Waterloo Station 3, Waterloo"
+stopifnot(any(check_north), any(check_south),
+          all(stations_bng$bank[check_north] == "North", na.rm = FALSE),
+          all(stations_bng$bank[check_south] == "South", na.rm = FALSE))
+
+station_bank_summary <- stations_bng |>
+  st_drop_geometry() |>
+  mutate(bank = coalesce(bank, "Unclassified")) |>
+  count(bank, name = "stations") |>
+  mutate(station_share_pct = 100 * stations / sum(stations))
+station_bank_summary
+stations_bng |> filter(is.na(bank)) |> st_drop_geometry() |>
+  select(station_id, station_name)
+```
+
+```{r validate-bank-classification}
+ggplot() +
+
+  geom_sf(
+    data = thames_bng,
+    fill = col_thames,
+    colour = NA
+  ) +
+
+  geom_sf(
+    data = stations_bng,
+    aes(colour = bank),
+    size = 1.4
+  ) +
+
+  scale_colour_manual(
+    values = c(
+      "North" = col_station,
+      "South" = col_cross
+    ),
+    na.value = "red"
+  ) +
+
+  coord_sf(
+    crs = st_crs(27700),
+    xlim = as.numeric(x_limits),
+    ylim = as.numeric(y_limits),
+    expand = FALSE,
+    datum = NA
+  ) +
+
+  labs(
+    title = "Docking Stations by River Bank",
+    colour = "River bank"
+  ) +
+
+  theme_void()
+```
+
+## Docking station geography
+
+```{r figure-1-network, fig.width=12, fig.height=8}
+fig1 <- ggplot() +
+
+  # Muted OpenStreetMap basemap
+  annotation_map_tile(
+    type = "osm",
+    zoomin = -1,
+    alpha = 0.20,
+    cachedir = "data/raw/map_tiles",
+    progress = "none"
+  ) +
+
+  # River Thames
+  geom_sf(
+    data = thames_bng,
+    aes(fill = "River Thames"),
+    colour = NA,
+    alpha = 0.65
+  ) +
+
+  # Docking station locations
+  geom_sf(
+    data = stations_bng,
+    aes(colour = "Docking station"),
+    size = 1.3,
+    alpha = 0.9
+  ) +
+
+  scale_fill_manual(NULL, values = c("River Thames" = col_thames)) +
+  scale_colour_manual(NULL, values = c("Docking station" = col_station)) +
+
+  # Explicitly use British National Grid
+  coord_sf(
+  crs = st_crs(27700),
+  default_crs = st_crs(27700),
+  xlim = as.numeric(x_limits),
+  ylim = as.numeric(y_limits),
+  expand = FALSE,
+  datum = NA
+) +
+
+  # Scale bar
+  annotation_scale(
+    location = "bl",
+    width_hint = 0.12,
+    text_cex = 0.8,
+    line_width = 0.7
+  ) +
+
+  # North arrow
+  annotation_north_arrow(
+  location = "tr",
+  which_north = "grid",
+  pad_x = grid::unit(0.5, "cm"),
+  pad_y = grid::unit(0.5, "cm"),
+  height = grid::unit(1, "cm"),
+  width = grid::unit(1, "cm"),
+  style = north_arrow_orienteering(
+    text_col = col_station,
+    line_col = col_station,
+    fill = c("white", col_station),
+    text_size = 8
+  )
+) +
+
+  # Title, subtitle and attribution
+  labs(
+    title = "London's Cycle Hire Network",
+    subtitle = paste0(
+      nrow(stations_bng),
+      " docking station locations | 25 November 2026"
+    ),
+    caption = paste0(
+      "Sources: TfL BikePoint API (25 November 2026) | ",
+      "Greater London Authority\n",
+      "Basemap: © OpenStreetMap contributors\n",
+      "Projection: British National Grid (EPSG:27700)"
+    )
+  ) +
+
+  # Cartographic styling
+  theme_void() +
+
+  theme(
+    plot.background = element_rect(
+      fill = col_background,
+      colour = NA
+    ),
+    panel.background = element_rect(
+      fill = col_background,
+      colour = NA
+    ),
+    plot.title = element_text(
+      size = 22,
+      face = "bold",
+      colour = col_station
+    ),
+    plot.subtitle = element_text(
+      size = 12,
+      colour = col_same,
+      margin = margin(b = 12)
+    ),
+    plot.caption = element_text(
+      size = 9,
+      colour = col_same,
+      hjust = 0,
+      margin = margin(t = 12)
+    ),
+    legend.position = "bottom",
+    legend.text = element_text(size = 10, colour = col_station),
+    plot.margin = margin(15, 15, 15, 15)
+  )
+
+fig1
+```
+
+```{r export-figure-1}
+ggsave(
+  filename = "outputs/fig01_cycling_network.png",
+  plot = fig1,
+  width = 12,
+  height = 8,
+  dpi = 300
+)
+# A smaller copy for the public-facing HTML.
+ggsave("outputs/web/fig01_cycling_network.png", fig1,
+       width = 12, height = 8, dpi = 160)
+```
+
+```{r classify-od-pairs}
+# Extract station identifiers and bank classifications
+station_banks <- stations_bng |>
+  st_drop_geometry() |>
+  select(station_id, bank)
+
+# Attach origin and destination bank information
+od_pairs <- od_pairs |>
+  select(-any_of(c("origin_bank", "destination_bank", "relationship"))) |>
+
+  left_join(
+    station_banks |>
+      rename(origin_id = station_id,
+             origin_bank = bank),
+    by = "origin_id"
+  ) |>
+
+  left_join(
+    station_banks |>
+      rename(destination_id = station_id,
+             destination_bank = bank),
+    by = "destination_id"
+  ) |>
+
+  mutate(
+    relationship = case_when(
+      is.na(origin_bank) |
+        is.na(destination_bank) ~ "Unclassified",
+      origin_bank == destination_bank ~ "Same-bank",
+      TRUE ~ "Cross-river"
+    )
+  )
+
+# Inspect classifications
+count(od_pairs, relationship)
+```
+
+```{r summarise-cycling-flows}
+flow_summary <- od_pairs |>
+  group_by(relationship) |>
+  summarise(
+    unique_pairs = n(),
+    total_journeys = sum(journeys),
+    median_direct_km = median(direct_km),
+    .groups = "drop"
+  ) |>
+  mutate(
+    journey_share_pct = round(
+      total_journeys / sum(total_journeys) * 100,
+      2
+    )
+  )
+
+flow_summary
+stopifnot(sum(flow_summary$total_journeys) == journey_total)
+
+# Four directional bank relationships; missing bank labels remain explicit.
+bank_flow_summary <- od_pairs |>
+  mutate(origin_bank = coalesce(origin_bank, "Unclassified"),
+         destination_bank = coalesce(destination_bank, "Unclassified")) |>
+  group_by(origin_bank, destination_bank) |>
+  summarise(unique_pairs = n(), total_journeys = sum(journeys), .groups = "drop") |>
+  mutate(journey_share_pct = 100 * total_journeys / journey_total)
+bank_flow_summary
+```
+
+```{r aggregate-cross-river-flows}
+cross_flows <- od_pairs |>
+
+  filter(relationship == "Cross-river") |>
+
+  # Create consistent identifiers for both directions
+  mutate(
+    station_a = pmin(origin_id, destination_id),
+    station_b = pmax(origin_id, destination_id)
+  ) |>
+
+  group_by(station_a, station_b) |>
+
+  summarise(
+    total_journeys = sum(journeys),
+    direct_km = first(direct_km),
+    .groups = "drop"
+  ) |>
+
+  arrange(desc(total_journeys), station_a, station_b)
+
+# Inspect busiest cross-river connections
+head(cross_flows, 10)
+
+# Select the 40 busiest connections for mapping
+top_flows <- cross_flows |>
+  slice_head(n = 40)
+```
+
+## Cross-river journey concentration
+
+Each journey contributes to both its origin and destination station. Station totals therefore measure endpoint activity, not distinct journeys across all stations.
+
+```{r summarise-cross-river-hubs}
+station_lookup <- stations_bng |> st_drop_geometry() |>
+  select(station_id, station_name, bank)
+
+# Rank all cross-river stations and the endpoints of the 40 displayed flows.
+rank_hubs <- function(flows) {
+  bind_rows(
+    flows |> transmute(station_id = station_a, total_journeys),
+    flows |> transmute(station_id = station_b, total_journeys)
+  ) |>
+    group_by(station_id) |>
+    summarise(endpoint_journeys = sum(total_journeys),
+              connections = n(), .groups = "drop") |>
+    left_join(station_lookup, by = "station_id") |>
+    arrange(desc(endpoint_journeys), station_id)
+}
+all_hubs <- rank_hubs(cross_flows)
+mapped_hubs <- rank_hubs(top_flows)
+stopifnot(sum(all_hubs$endpoint_journeys) == 2 * sum(cross_flows$total_journeys),
+          sum(mapped_hubs$endpoint_journeys) == 2 * sum(top_flows$total_journeys))
+
+# The three labels describe the mapped subset, not the entire network.
+label_hubs <- mapped_hubs |> slice_head(n = 3)
+label_hubs
+head(all_hubs, 10)
+
+flow_concentration <- data.frame(
+  mapped_pairs = nrow(top_flows),
+  total_cross_pairs = nrow(cross_flows),
+  mapped_journeys = sum(top_flows$total_journeys),
+  total_cross_journeys = sum(cross_flows$total_journeys),
+  mapped_share_pct = 100 * sum(top_flows$total_journeys) /
+    sum(cross_flows$total_journeys)
+)
+flow_concentration
+```
+
+```{r construct-desire-lines}
+# Match station identifiers to spatial coordinates
+a_index <- match(
+  top_flows$station_a,
+  stations_bng$station_id
+)
+
+b_index <- match(
+  top_flows$station_b,
+  stations_bng$station_id
+)
+
+stopifnot(
+  !anyNA(a_index),
+  !anyNA(b_index)
+)
+
+# Extract projected coordinates
+coords_a <- st_coordinates(stations_bng[a_index, ])
+coords_b <- st_coordinates(stations_bng[b_index, ])
+
+# Construct one straight line per station pair
+flow_geometry <- lapply(
+  seq_len(nrow(top_flows)),
+  function(i) {
+    st_linestring(
+      rbind(coords_a[i, ], coords_b[i, ])
+    )
+  }
+)
+
+# Convert to a spatial dataset
+flows_sf <- st_sf(
+  top_flows,
+  geometry = st_sfc(
+    flow_geometry,
+    crs = 27700
+  )
+)
+
+# Inspect the spatial object's properties
+nrow(flows_sf)
+st_crs(flows_sf)
+table(st_geometry_type(flows_sf))
+table(st_is_valid(flows_sf))
+
+# Inspect the attribute table separately
+head(as.data.frame(st_drop_geometry(flows_sf)))
+```
+```{r figure-2-cross-river-flows, fig.width=12, fig.height=8}
+# Identify docking stations associated with the mapped flows
+flow_stations <- stations_bng |>
+  filter(
+    station_id %in% c(
+      top_flows$station_a,
+      top_flows$station_b
+    )
+  )
+
+# A local map extent includes every displayed endpoint, with 1 km padding.
+flow_bbox <- st_bbox(flow_stations)
+flow_x <- as.numeric(flow_bbox[c("xmin", "xmax")]) + c(-1000, 1000)
+flow_y <- as.numeric(flow_bbox[c("ymin", "ymax")]) + c(-1000, 1000)
+label_points <- stations_bng[match(label_hubs$station_id, stations_bng$station_id), ]
+label_xy <- st_coordinates(label_points)
+label_data <- data.frame(x = label_xy[, 1], y = label_xy[, 2],
+                         name = label_hubs$station_name)
+
+fig2 <- ggplot() +
+
+  # Muted OpenStreetMap basemap
+  annotation_map_tile(
+    type = "osm",
+    zoomin = 0,
+    alpha = 0.20,
+    cachedir = "data/raw/map_tiles",
+    progress = "none"
+  ) +
+
+  # River Thames
+  geom_sf(
+    data = thames_bng,
+    fill = col_thames,
+    colour = NA,
+    alpha = 0.65
+  ) +
+
+  # Wider docking station network
+  geom_sf(
+    data = stations_bng,
+    colour = col_station,
+    size = 0.8,
+    alpha = 0.20
+  ) +
+
+  # Cross-river desire lines
+  geom_sf(
+    data = flows_sf,
+    aes(linewidth = total_journeys),
+    colour = col_cross,
+    alpha = 0.75
+  ) +
+
+  # Docking stations associated with mapped flows
+  geom_sf(
+    data = flow_stations,
+    colour = col_station,
+    size = 1.5
+  ) +
+
+  # Label the most active endpoints among the displayed flows.
+  ggrepel::geom_label_repel(
+    data = label_data, aes(x = x, y = y, label = name),
+    inherit.aes = FALSE, seed = 476, size = 3,
+    colour = col_station, fill = "white", segment.colour = col_station,
+    box.padding = 0.45, point.padding = 0.4, max.overlaps = Inf
+  ) +
+
+  scale_linewidth_continuous(
+    name = "Recorded journeys",
+    range = c(0, 2.5),
+    limits = c(0, max(top_flows$total_journeys)),
+    labels = scales::label_comma()
+  ) +
+
+  # Consistent geographical extent and projection
+  coord_sf(
+    crs = st_crs(27700),
+    default_crs = st_crs(27700),
+    xlim = flow_x,
+    ylim = flow_y,
+    expand = FALSE,
+    datum = NA
+  ) +
+
+  # Scale bar
+  annotation_scale(
+    location = "bl",
+    width_hint = 0.12,
+    text_cex = 0.8,
+    line_width = 0.7
+  ) +
+
+  # North arrow
+  annotation_north_arrow(
+    location = "tr",
+    which_north = "grid",
+    pad_x = grid::unit(0.5, "cm"),
+    pad_y = grid::unit(0.5, "cm"),
+    height = grid::unit(1, "cm"),
+    width = grid::unit(1, "cm"),
+    style = north_arrow_orienteering(
+      text_col = col_station,
+      line_col = col_station,
+      fill = c("white", col_station),
+      text_size = 8
+    )
+  ) +
+
+  labs(
+    title = "Cycling Across the Thames",
+    subtitle = paste0(
+      nrow(top_flows),
+      " busiest cross-river station pairs | March 2026"
+    ),
+    caption = paste0(
+      "Sources: TfL Santander Cycles | Greater London Authority\n",
+      "Basemap: © OpenStreetMap contributors\n",
+      "Lines show endpoint connections, not travelled routes. Labels: top 3 mapped endpoints."
+    )
+  ) +
+
+  # Reuse Figure 1 styling
+  fig1$theme +
+
+  theme(
+    legend.position = "bottom",
+    legend.title = element_text(
+      colour = col_station,
+      face = "bold",
+      size = 10
+    ),
+    legend.text = element_text(
+      colour = col_same,
+      size = 9
+    )
+  )
+
+fig2
+```
+
+```{r export-figure-2}
+ggsave(
+  filename = "outputs/fig02_cross_river_flows.png",
+  plot = fig2,
+  width = 12,
+  height = 8,
+  dpi = 300
+)
+
+file.exists("outputs/fig02_cross_river_flows.png")
+ggsave("outputs/web/fig02_cross_river_flows.png", fig2,
+       width = 12, height = 8, dpi = 160)
+```
+
+
+```{r export-spatial-data}
+# Ensure the processed data directory exists
+dir.create(
+  "data/processed",
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+# Export classified docking stations
+saveRDS(
+  stations_bng,
+  "data/processed/stations_classified.rds"
+)
+
+# Export classified OD relationships
+saveRDS(
+  od_pairs,
+  "data/processed/od_classified.rds"
+)
+
+# Export cross-river desire lines
+saveRDS(
+  flows_sf,
+  "data/processed/cross_river_flows.rds"
+)
+
+# Export river-bank polygons
+saveRDS(
+  banks,
+  "data/processed/river_banks.rds"
+)
+
+# Verify saved files
+list.files("data/processed")
+# Save summary tables and the full undirected flow population.
+saveRDS(cross_flows, "data/processed/cross_flows_all.rds")
+saveRDS(list(station_banks = station_bank_summary,
+             bank_flows = bank_flow_summary,
+             flow_summary = flow_summary,
+             concentration = flow_concentration,
+             mapped_hubs = mapped_hubs,
+             all_hubs = all_hubs),
+        "data/processed/spatial_summary.rds")
+readr::write_csv(station_bank_summary, "outputs/station_bank_summary.csv")
+readr::write_csv(bank_flow_summary, "outputs/bank_flow_summary.csv")
+readr::write_csv(all_hubs, "outputs/cross_river_station_hubs.csv")
+readr::write_csv(mapped_hubs, "outputs/mapped_cross_river_hubs.csv")
+readr::write_csv(flow_concentration, "outputs/flow_concentration.csv")
+```

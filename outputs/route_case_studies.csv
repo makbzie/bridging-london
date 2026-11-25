@@ -1,0 +1,3 @@
+case_group,route_id,relationship,origin_name,destination_name,direct_km,network_km,detour_ratio,extra_km,network_min,journeys,both_directions_journeys,river_crossings,max_offset_m
+Case A: opposite banks,300250_002648,Cross-river,"Temple Gardens, Temple","Waterloo Bridge, South Bank",0.7272633607612111,1.504,2.0680266340185143,0.7767366392387889,9,1,1,1,392.1976678800143
+Case B: same bank,200105_001188,Same-bank,"Bonny Street, Camden Town","London Zoo Car Park, The Regent's Park",0.9426811984514183,1.75,1.856407025911621,0.8073188015485817,11,4,7,0,331.6755352815674

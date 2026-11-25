@@ -1,0 +1,1034 @@
+---
+title: "Bridging London | Network Analysis"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+---
+
+## Overview
+
+This document compares modelled cycling connectivity between same-bank and opposite-bank docking stations. Thirty distinct station pairs are sampled across three direct-distance bands. Cached OSRM bicycle routes are compared with straight-line connections using detour ratios, additional distances and bank-to-bank transitions. Contrasting case studies and directional journey counts contextualise the results. The analysis is exploratory and does not establish a causal effect of the Thames.
+
+
+```{r setup, message=FALSE, warning=FALSE}
+library(sf)
+library(dplyr)
+library(osrm)
+library(ggplot2)
+library(leaflet)
+library(ggspatial)
+library(scales)
+
+dir.create("outputs/web", recursive = TRUE, showWarnings = FALSE)
+
+# Consistent project colour palette
+col_station <- "#173F5F"
+col_thames <- "#82B5D1"
+col_cross <- "#D97706"
+col_same <- "#64748B"
+col_background <- "#F5F5F2"
+```
+
+```{r import-network-inputs}
+stations_bng <- readRDS(
+  "data/processed/stations_classified.rds"
+)
+
+od_pairs <- readRDS(
+  "data/processed/od_classified.rds"
+)
+
+thames_bng <- readRDS(
+  "data/processed/thames_bng.rds"
+)
+
+banks <- readRDS(
+  "data/processed/river_banks.rds"
+)
+
+# Inspect the available OD relationships
+count(od_pairs, relationship)
+
+# Confirm spatial compatibility
+stopifnot(
+  st_crs(stations_bng) == st_crs(banks),
+  st_crs(stations_bng) == st_crs(thames_bng)
+)
+stopifnot(st_crs(stations_bng) == st_crs(27700),
+          !anyDuplicated(stations_bng$station_id),
+          !anyDuplicated(od_pairs[c("origin_id", "destination_id")]))
+```
+
+```{r construct-sampling-population}
+eligible_directional <- od_pairs |>
+
+  filter(
+    relationship %in% c("Same-bank", "Cross-river"),
+    direct_km >= 0.5,
+    direct_km < 3
+  ) |>
+
+  mutate(
+    distance_band = cut(
+      direct_km,
+      breaks = c(0.5, 1, 2, 3),
+      labels = c("0.5–1 km", "1–2 km", "2–3 km"),
+      right = FALSE
+    ),
+
+    # Identify reciprocal station pairs
+    pair_id = paste(
+      pmin(origin_id, destination_id),
+      pmax(origin_id, destination_id),
+      sep = "_"
+    )
+  )
+
+# Randomly retain one direction per station pair
+set.seed(476)
+
+eligible_pairs <- eligible_directional |>
+  slice_sample(prop = 1) |>
+  distinct(pair_id, .keep_all = TRUE)
+
+# Inspect available pairs within each stratum
+count(eligible_pairs, distance_band, relationship)
+```
+
+```{r select-routing-sample}
+set.seed(476)
+sample_file <- "data/processed/routing_sample.rds"
+
+# Generate the original stratified design using the same sampling procedure.
+candidate_sample <- eligible_pairs |>
+  group_by(distance_band, relationship) |>
+  slice_sample(n = 5) |>
+  ungroup() |>
+  arrange(distance_band, relationship) |>
+  mutate(route_id = paste(origin_id, destination_id, sep = "_"))
+
+# Preserve the original route IDs if the earlier sample exists. Refresh all
+# attributes from the latest OD data rather than reusing stale attributes.
+if (file.exists(sample_file)) {
+  original_sample <- readRDS(sample_file)
+  pool <- eligible_directional |>
+    mutate(route_id = paste(origin_id, destination_id, sep = "_"))
+  idx <- match(original_sample$route_id, pool$route_id)
+  stopifnot(!anyNA(idx), !anyDuplicated(idx))
+  routing_sample <- pool[idx, ]
+  stopifnot(identical(as.character(routing_sample$relationship),
+                      as.character(original_sample$relationship)),
+            identical(as.character(routing_sample$distance_band),
+                      as.character(original_sample$distance_band)))
+} else {
+  routing_sample <- candidate_sample
+}
+
+sample_summary <- routing_sample |> count(distance_band, relationship)
+stopifnot(nrow(routing_sample) == 30L,
+          nrow(sample_summary) == 6L, all(sample_summary$n == 5L),
+          !anyDuplicated(routing_sample$pair_id),
+          !anyDuplicated(routing_sample$route_id))
+sample_summary
+saveRDS(routing_sample, sample_file)
+```
+
+```{r inspect-routing-sample, fig.width=12, fig.height=7}
+sample_lines <- st_sfc(
+  lapply(seq_len(nrow(routing_sample)), function(i) {
+
+    a <- match(
+      routing_sample$origin_id[i],
+      stations_bng$station_id
+    )
+
+    b <- match(
+      routing_sample$destination_id[i],
+      stations_bng$station_id
+    )
+
+    st_linestring(
+      st_coordinates(stations_bng[c(a, b), ])
+    )
+  }),
+  crs = 27700
+)
+
+sample_sf <- st_sf(
+  routing_sample,
+  geometry = sample_lines
+)
+
+ggplot() +
+
+  geom_sf(
+    data = thames_bng,
+    fill = col_thames,
+    colour = NA,
+    alpha = 0.65
+  ) +
+
+  geom_sf(
+    data = stations_bng,
+    colour = col_station,
+    size = 0.8,
+    alpha = 0.15
+  ) +
+
+  geom_sf(
+    data = sample_sf,
+    aes(colour = relationship),
+    linewidth = 1,
+    alpha = 0.85
+  ) +
+
+  scale_colour_manual(
+    values = c(
+      "Same-bank" = col_same,
+      "Cross-river" = col_cross
+    )
+  ) +
+
+  coord_sf(
+    crs = st_crs(27700),
+    xlim = range(st_coordinates(stations_bng)[, 1]) +
+      c(-1000, 1000),
+    ylim = range(st_coordinates(stations_bng)[, 2]) +
+      c(-1000, 1000),
+    datum = NA
+  ) +
+
+  labs(
+    title = "Network Analysis Sample",
+    subtitle = "30 station pairs stratified by distance",
+    colour = "Relationship"
+  ) +
+
+  theme_void() +
+
+  theme(legend.position = "bottom")
+```
+
+```{r configure-routing}
+options(
+  osrm.server = "https://routing.openstreetmap.de/",
+  osrm.profile = "bike"
+)
+
+# Directory for cached network routes
+dir.create(
+  "data/processed/route_cache",
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+# The existing analysis is cached. Explicitly opt in only if rebuilding
+# missing routes, subject to the public service's usage policy.
+allow_live_routing <- FALSE
+```
+
+```{r define-routing-function}
+get_cycle_route <- function(pair) {
+  cache_file <- file.path("data/processed/route_cache",
+                          paste0(pair$route_id, ".rds"))
+  origin <- c(pair$origin_lon, pair$origin_lat)
+  destination <- c(pair$destination_lon, pair$destination_lat)
+  stopifnot(length(origin) == 2L, length(destination) == 2L,
+            all(is.finite(c(origin, destination))))
+
+  valid_route <- function(route) {
+
+  inherits(route, "sf") &&
+    nrow(route) == 1L &&
+    isTRUE(is.finite(route$distance) & route$distance > 0) &&
+    isTRUE(is.finite(route$duration) & route$duration > 0) &&
+    !is.na(st_crs(route)) &&
+    isTRUE(st_geometry_type(route) == "LINESTRING") &&
+    isTRUE(st_is_valid(st_transform(route, 27700))) &&
+    !any(st_is_empty(route))
+}
+
+  if (file.exists(cache_file)) {
+    cached <- readRDS(cache_file)
+    # Legacy caches predate explicit profile/server fields. They were
+    # created by the original bicycle-routing configuration in this project.
+    profile_ok <- is.null(cached$profile) || identical(cached$profile, getOption("osrm.profile"))
+    server_ok <- is.null(cached$server) || identical(cached$server, getOption("osrm.server"))
+    if (identical(cached$origin, origin) &&
+        identical(cached$destination, destination) &&
+        profile_ok && server_ok && valid_route(cached$route)) {
+      route <- cached$route
+      route$route_id <- pair$route_id
+      route$retrieved_at_utc <- if (is.null(cached$retrieved_at)) NA_character_ else
+        format(cached$retrieved_at, tz = "UTC", usetz = TRUE)
+      return(route)
+    }
+  }
+
+  if (!allow_live_routing) {
+    stop("Missing or incompatible cached route: ", pair$route_id,
+         ". Check the cache before enabling live requests.")
+  }
+  Sys.sleep(1.2)
+  route <- osrmRoute(src = origin, dst = destination, overview = "full")
+  stopifnot(valid_route(route))
+  route$route_id <- pair$route_id
+  retrieved_at <- Sys.time()
+  route$retrieved_at_utc <- format(retrieved_at, tz = "UTC", usetz = TRUE)
+  saveRDS(list(origin = origin, destination = destination, route = route,
+               retrieved_at = retrieved_at, profile = getOption("osrm.profile"),
+               server = getOption("osrm.server")), cache_file)
+  route
+}
+```
+
+```{r test-routing-function}
+first_route <- get_cycle_route(
+  routing_sample[1, ]
+)
+
+# Inspect route measurements
+st_drop_geometry(first_route)
+
+# Inspect route geometry
+plot(
+  st_geometry(first_route),
+  col = col_cross,
+  lwd = 3
+)
+```
+
+```{r calculate-network-routes}
+route_list <- vector("list", nrow(routing_sample))
+routing_errors <- rep(NA_character_, nrow(routing_sample))
+
+for (i in seq_len(nrow(routing_sample))) {
+  message("Processing route ", i, " of ", nrow(routing_sample))
+  # Single-bracket assignment preserves list length even when a route fails.
+  result <- tryCatch(get_cycle_route(routing_sample[i, ]), error = identity)
+  if (inherits(result, "error")) {
+    routing_errors[i] <- conditionMessage(result)
+    route_list[i] <- list(NULL)
+  } else {
+    route_list[i] <- list(result)
+  }
+}
+
+successful <- !vapply(route_list, is.null, logical(1))
+routing_audit <- data.frame(route_id = routing_sample$route_id,
+                            successful = successful, error = routing_errors)
+readr::write_csv(routing_audit, "outputs/routing_audit.csv")
+table(successful)
+# Do not silently change the analytical sample if requests fail.
+if (!all(successful)) {
+  print(routing_audit[!successful, ])
+  stop("Incomplete routing sample. Resolve the failed routes before comparing groups.")
+}
+routes_sf <- do.call(rbind, route_list)
+stopifnot(identical(routes_sf$route_id, routing_sample$route_id))
+```
+
+```{r calculate-network-efficiency}
+routes_sf <- routes_sf |>
+
+  rename(
+    network_km = distance,
+    network_min = duration
+  ) |>
+
+  left_join(
+    routing_sample,
+    by = "route_id"
+  ) |>
+
+  mutate(
+    detour_ratio = network_km / direct_km,
+    extra_km = network_km - direct_km,
+    extra_distance_pct = (detour_ratio - 1) * 100
+  )
+
+# Inspect the analytical variables
+routes_sf |>
+  st_drop_geometry() |>
+  select(
+    origin_name,
+    destination_name,
+    relationship,
+    direct_km,
+    network_km,
+    detour_ratio
+  ) |>
+  head(10)
+# Attach observed demand in both directions, retaining directional route costs.
+pair_demand <- od_pairs |>
+  mutate(pair_id = paste(pmin(origin_id, destination_id),
+                        pmax(origin_id, destination_id), sep = "_")) |>
+  group_by(pair_id) |>
+  summarise(both_directions_journeys = sum(journeys), .groups = "drop")
+routes_sf <- routes_sf |> left_join(pair_demand, by = "pair_id")
+stopifnot(nrow(routes_sf) == 30L,
+          all(routes_sf$both_directions_journeys >= routes_sf$journeys))
+```
+
+```{r validate-network-results}
+stopifnot(
+  all(st_is_valid(st_transform(routes_sf, 27700))),
+  all(is.finite(routes_sf$detour_ratio)),
+  all(routes_sf$direct_km > 0)
+)
+
+# Compare docking station coordinates with OSRM's snapped route endpoints.
+routes_bng <- st_transform(routes_sf, 27700)
+origin_xy <- st_coordinates(stations_bng[match(routes_sf$origin_id,
+                                               stations_bng$station_id), ])
+destination_xy <- st_coordinates(stations_bng[match(routes_sf$destination_id,
+                                                    stations_bng$station_id), ])
+snap_metrics <- t(vapply(seq_len(nrow(routes_bng)), function(i) {
+  xy <- st_coordinates(st_geometry(routes_bng)[i])[, c("X", "Y"), drop = FALSE]
+  a <- xy[1, ]; b <- xy[nrow(xy), ]
+  c(origin_snap_m = sqrt(sum((a - origin_xy[i, ])^2)),
+    destination_snap_m = sqrt(sum((b - destination_xy[i, ])^2)),
+    snapped_direct_km = sqrt(sum((a - b)^2)) / 1000)
+}, numeric(3)))
+routes_sf$origin_snap_m <- snap_metrics[, "origin_snap_m"]
+routes_sf$destination_snap_m <- snap_metrics[, "destination_snap_m"]
+routes_sf$snapped_direct_km <- snap_metrics[, "snapped_direct_km"]
+routes_sf$snapped_detour_ratio <- ifelse(routes_sf$snapped_direct_km > 0,
+  routes_sf$network_km / routes_sf$snapped_direct_km, NA_real_)
+
+# Flag rather than silently delete anomalous distances. A 50 m endpoint
+# threshold is a diagnostic choice, not a validated accuracy standard.
+route_quality <- routes_sf |> st_drop_geometry() |>
+  select(route_id, origin_name, destination_name, origin_snap_m,
+         destination_snap_m, direct_km, snapped_direct_km, network_km,
+         detour_ratio, snapped_detour_ratio) |>
+  mutate(flag = origin_snap_m > 50 | destination_snap_m > 50 | detour_ratio < 1)
+summary(routes_sf$detour_ratio)
+summary(c(routes_sf$origin_snap_m, routes_sf$destination_snap_m))
+route_quality |> filter(flag)
+readr::write_csv(route_quality, "outputs/route_quality.csv")
+
+# All six strata must still have five valid modelled routes.
+actual_sample <- routes_sf |> st_drop_geometry() |> count(distance_band, relationship)
+stopifnot(nrow(actual_sample) == 6L, all(actual_sample$n == 5L))
+```
+
+```{r summarise-network-efficiency}
+network_summary <- routes_sf |>
+
+  st_drop_geometry() |>
+
+  group_by(relationship) |>
+
+  summarise(
+    routes = n(),
+    median_direct_km = median(direct_km),
+    median_network_km = median(network_km),
+    median_detour = median(detour_ratio),
+    median_extra_km = median(extra_km),
+    median_duration = median(network_min),
+    .groups = "drop"
+  )
+
+network_summary
+```
+
+## Comparative Network Efficiency
+
+Network efficiency is compared within three distance bands to reduce the influence of geographical separation on the comparison between same-bank and cross-river connections.
+
+
+```{r compare-distance-bands}
+band_summary <- routes_sf |>
+  st_drop_geometry() |>
+  group_by(distance_band, relationship) |>
+  summarise(
+    routes = n(),
+    median_direct_km = median(direct_km),
+    median_network_km = median(network_km),
+    median_detour = median(detour_ratio),
+    median_extra_km = median(extra_km),
+    .groups = "drop"
+  )
+
+band_summary
+
+# Residual distance imbalance within each stratum and sensitivity to snapping.
+band_comparison <- inner_join(
+  band_summary |> filter(relationship == "Cross-river") |>
+    select(distance_band, cross_direct_km = median_direct_km,
+           cross_detour = median_detour),
+  band_summary |> filter(relationship == "Same-bank") |>
+    select(distance_band, same_direct_km = median_direct_km,
+           same_detour = median_detour), by = "distance_band"
+) |> mutate(direct_gap_km = cross_direct_km - same_direct_km,
+            detour_gap = cross_detour - same_detour)
+band_comparison
+
+snap_sensitivity <- routes_sf |> st_drop_geometry() |>
+  group_by(distance_band, relationship) |>
+  summarise(routes = n(),
+            median_station_detour = median(detour_ratio),
+            median_snapped_detour = if (all(is.finite(snapped_detour_ratio)))
+              median(snapped_detour_ratio) else NA_real_, .groups = "drop")
+snap_sensitivity
+```
+
+
+## Route-Based River Crossing Analysis
+
+Modelled cycling routes are examined to identify transitions between the north and south banks of the Thames. This allows endpoint classifications to be distinguished from the actual geographical structure of the modelled route.
+
+
+```{r define-crossing-function}
+# Transform routes to British National Grid
+routes_bng <- st_transform(routes_sf, 27700)
+
+# Reconstruct the extent of the bank classification
+study_extent <- st_as_sfc(st_bbox(banks))
+river_geom <- st_union(st_make_valid(thames_bng))
+
+count_crossings <- function(route, origin_bank,
+                            destination_bank, spacing_m = 5) {
+
+  # Densify the route at intervals no greater than spacing_m metres
+  dense_route <- st_segmentize(
+    route,
+    dfMaxLength = spacing_m
+  )
+
+  # Extract ordered coordinates along the route
+  coords <- st_coordinates(dense_route)
+
+  route_points <- st_as_sf(
+    data.frame(
+      x = coords[, "X"],
+      y = coords[, "Y"]
+    ),
+    coords = c("x", "y"),
+    crs = 27700
+  )
+
+  # Check whether the route leaves the classification area
+  outside <- any(
+    lengths(st_covered_by(route_points, study_extent)) == 0
+  )
+
+  # Classify each point by river bank
+  matches <- st_intersects(route_points, banks)
+
+  point_banks <- vapply(
+    matches,
+    function(x) {
+      if (length(x) == 1) {
+        return(as.character(banks$bank[x]))
+      }
+      NA_character_
+    },
+    FUN.VALUE = character(1)
+  )
+
+  # Non-bank points should fall within the river, not an unclassified land gap.
+  unknown <- which(is.na(point_banks))
+  unexpected_gap <- length(unknown) > 0L && any(
+    lengths(st_intersects(route_points[unknown, ], river_geom)) == 0L
+  )
+
+  # Check that route endpoints agree with station banks
+  endpoints_match <- isTRUE(
+    first(point_banks) == origin_bank &
+    last(point_banks) == destination_bank
+  )
+
+  # Remove points between the banks
+  bank_sequence <- point_banks[!is.na(point_banks)]
+
+  # Collapse consecutive points occupying the same bank
+  transitions <- rle(bank_sequence)$values
+
+  # Count changes between banks
+  crossings <- if (
+    outside || unexpected_gap || !endpoints_match || length(transitions) == 0
+  ) {
+    NA_integer_
+  } else {
+    length(transitions) - 1L
+  }
+
+  crossings
+}
+```
+
+
+```{r calculate-river-crossings}
+# Use two spacings to detect sensitivity to vertex density.
+classify_routes <- function(spacing) {
+  vapply(seq_len(nrow(routes_sf)), function(i) {
+    count_crossings(st_geometry(routes_bng)[i], routes_sf$origin_bank[i],
+                    routes_sf$destination_bank[i], spacing_m = spacing)
+  }, integer(1))
+}
+counts_5m <- classify_routes(5)
+counts_2m <- classify_routes(2)
+routes_sf$river_crossings <- ifelse(!is.na(counts_5m) & !is.na(counts_2m) &
+                                     counts_5m == counts_2m,
+                                   counts_5m, NA_integer_)
+# Retain an audit trail for ambiguous routes.
+crossing_audit <- data.frame(route_id = routes_sf$route_id,
+                             crossings_5m = counts_5m, crossings_2m = counts_2m,
+                             final_crossings = routes_sf$river_crossings)
+readr::write_csv(crossing_audit, "outputs/crossing_audit.csv")
+crossing_summary <- routes_sf |> st_drop_geometry() |>
+  count(relationship, river_crossings)
+crossing_summary
+```
+
+```{r investigate-double-crossings}
+double_crossings <- routes_sf |>
+  filter(
+    relationship == "Same-bank",
+    river_crossings >= 2
+  )
+
+double_crossings |>
+  st_drop_geometry() |>
+  select(
+    origin_name,
+    destination_name,
+    direct_km,
+    network_km,
+    detour_ratio,
+    river_crossings
+  )
+
+# Validate crossing counts against endpoint classifications
+routes_sf |>
+  st_drop_geometry() |>
+  filter(
+    is.na(river_crossings) |
+    (relationship == "Same-bank" &
+       river_crossings %% 2 != 0) |
+    (relationship == "Cross-river" &
+       river_crossings %% 2 != 1)
+  )
+```
+
+## Contrasting route case studies
+
+The highest-detour connection in each group in the shortest distance band illustrates route indirectness on both sides of the river. These deliberately selected extremes are not representative examples.
+
+```{r select-route-cases}
+case_studies <- routes_sf |> st_drop_geometry() |>
+  filter(distance_band == levels(routing_sample$distance_band)[1]) |>
+  group_by(relationship) |>
+  arrange(desc(detour_ratio), route_id, .by_group = TRUE) |>
+  slice_head(n = 1) |> ungroup() |>
+  mutate(case_group = if_else(relationship == "Cross-river",
+                              "Case A: opposite banks", "Case B: same bank")) |>
+  select(case_group, route_id, relationship, origin_name, destination_name,
+         direct_km, network_km, detour_ratio, extra_km, network_min,
+         journeys, both_directions_journeys, river_crossings)
+stopifnot(nrow(case_studies) == 2L)
+
+# Maximum departure from the straight-line segment, measured in metres.
+# For a polyline and a straight segment, the maximum occurs at a vertex.
+case_studies$max_offset_m <- vapply(case_studies$route_id, function(id) {
+  route_i <- match(id, routes_bng$route_id)
+  direct_i <- match(id, sample_sf$route_id)
+  xy <- st_coordinates(st_geometry(routes_bng)[route_i])[, c("X", "Y"), drop = FALSE]
+  vertices <- st_as_sf(as.data.frame(xy), coords = c("X", "Y"), crs = 27700)
+  max(as.numeric(st_distance(vertices, st_geometry(sample_sf)[direct_i])))
+}, numeric(1))
+case_studies
+
+# A screening table, not an infrastructure investment ranking. Both-direction
+# demand describes the connection; routing cost is for the sampled direction.
+demand_screen <- routes_sf |> st_drop_geometry() |>
+  select(route_id, relationship, origin_name, destination_name, distance_band,
+         journeys, both_directions_journeys, direct_km, network_km,
+         detour_ratio, extra_km) |>
+  group_by(distance_band) |>
+  mutate(band_median_journeys = median(both_directions_journeys),
+         band_median_detour = median(detour_ratio),
+         above_both_sample_medians = both_directions_journeys > band_median_journeys &
+           detour_ratio > band_median_detour) |>
+  ungroup() |>
+  arrange(desc(above_both_sample_medians), desc(both_directions_journeys),
+          desc(detour_ratio), route_id)
+head(demand_screen, 10)
+```
+
+## Interactive route explorer
+
+```{r prepare-interactive-data}
+routes_map <- st_transform(routes_sf, 4326)
+
+# Match direct lines to successfully modelled routes
+direct_index <- match(
+  routes_map$route_id,
+  sample_sf$route_id
+)
+
+stopifnot(!anyNA(direct_index))
+
+# Create a corresponding desire-line dataset
+direct_map <- routes_map
+
+st_geometry(direct_map) <- st_geometry(
+  st_transform(sample_sf[direct_index, ], 4326)
+)
+
+# Identify stations included in the routing sample
+sample_stations <- stations_bng |>
+  filter(
+    station_id %in% c(
+      routes_sf$origin_id,
+      routes_sf$destination_id
+    )
+  ) |>
+  st_transform(4326)
+
+# Colour routes according to endpoint classification
+route_palette <- colorFactor(
+  palette = c(col_cross, col_same),
+  domain = c("Cross-river", "Same-bank")
+)
+```
+
+```{r create-route-popups}
+routes_map$popup <- paste0(
+
+  "<b>",
+  htmltools::htmlEscape(routes_map$origin_name),
+  " &rarr; ",
+  htmltools::htmlEscape(routes_map$destination_name),
+  "</b><hr>",
+
+  "<b>Relationship:</b> ",
+  routes_map$relationship, "<br>",
+
+  "<b>March journeys (this direction):</b> ",
+  routes_map$journeys, "<br>",
+  "<b>March journeys (both directions):</b> ",
+  routes_map$both_directions_journeys, "<br>",
+
+  "<b>Direct distance:</b> ",
+  round(routes_map$direct_km, 2), " km<br>",
+
+  "<b>Cycling distance:</b> ",
+  round(routes_map$network_km, 2), " km<br>",
+
+  "<b>Modelled duration:</b> ",
+  round(routes_map$network_min, 1), " min<br>",
+
+  "<b>Detour ratio:</b> ",
+  round(routes_map$detour_ratio, 2), "&times;<br>",
+
+  "<b>Additional distance:</b> ",
+  round(routes_map$extra_km, 2), " km<br>",
+
+  "<b>Modelled river crossings:</b> ",
+  ifelse(
+    is.na(routes_map$river_crossings),
+    "Unclassified",
+    routes_map$river_crossings
+  )
+)
+
+direct_map$popup <- routes_map$popup
+```
+
+```{r figure-3-route-explorer, fig.width=12, fig.height=8}
+# Use route and direct-line bounds, not the full Thames geometry.
+route_bbox <- st_bbox(c(st_geometry(routes_map), st_geometry(direct_map)))
+map_bounds <- as.numeric(route_bbox[c("xmin", "ymin", "xmax", "ymax")])
+# Line width encodes detour ratio; use a fixed mapping for both groups.
+route_weight <- function(x) 2 + 2 * pmax(0, x - 1)
+
+fig3 <- leaflet(width = "100%", height = 560,
+                options = leafletOptions(preferCanvas = TRUE, scrollWheelZoom = FALSE)) |>
+  addTiles(options = tileOptions(opacity = 0.35)) |>
+  addPolygons(data = st_transform(thames_bng, 4326),
+              fillColor = col_thames, fillOpacity = 0.25,
+              stroke = FALSE, group = "River Thames",
+              options = pathOptions(interactive = FALSE))
+
+# Separate toggleable groups for same-bank and cross-river network/direct lines.
+for (rel in c("Same-bank", "Cross-river")) {
+  r <- routes_map[routes_map$relationship == rel, ]
+  d <- direct_map[direct_map$relationship == rel, ]
+  colour <- if (rel == "Cross-river") col_cross else col_same
+  network_group <- paste(rel, "routes")
+  direct_group <- paste(rel, "direct lines")
+  fig3 <- fig3 |>
+    addPolylines(data = d, color = colour, weight = 2, opacity = 0.85,
+                 dashArray = "6, 6", popup = ~popup, group = direct_group) |>
+    addPolylines(data = r, color = "#FFFFFF", weight = route_weight(r$detour_ratio) + 2,
+                 opacity = 0.9, options = pathOptions(interactive = FALSE),
+                 group = network_group) |>
+    addPolylines(data = r, color = colour, weight = route_weight(r$detour_ratio),
+                 opacity = 0.95, popup = ~popup,
+                 label = ~paste0(origin_name, " → ", destination_name),
+                 highlightOptions = highlightOptions(weight = 7, opacity = 1,
+                                                     bringToFront = TRUE),
+                 group = network_group)
+}
+
+# Individually toggleable case layers, including their direct connections.
+for (i in seq_len(nrow(case_studies))) {
+  k <- match(case_studies$route_id[i], routes_map$route_id)
+  r <- routes_map[k, ]; d <- direct_map[k, ]
+  colour <- if (r$relationship == "Cross-river") col_cross else col_same
+  group <- case_studies$case_group[i]
+  fig3 <- fig3 |>
+    addPolylines(data = d, color = colour, weight = 3, dashArray = "5, 6",
+                 opacity = 1, group = group, popup = ~popup) |>
+    addPolylines(data = r, color = "#FFFFFF", weight = 8, opacity = 1,
+                 group = group, options = pathOptions(interactive = FALSE)) |>
+    addPolylines(data = r, color = colour, weight = 5, opacity = 1,
+                 group = group, popup = ~popup,
+                 label = ~paste0(origin_name, " → ", destination_name))
+}
+
+fig3 <- fig3 |>
+  addCircleMarkers(data = sample_stations, radius = 4, color = "#FFFFFF",
+                   weight = 1, fillColor = col_station, fillOpacity = 1,
+                   label = ~station_name, group = "Docking stations") |>
+  addLayersControl(overlayGroups = c("Cross-river routes", "Same-bank routes",
+                                    "Cross-river direct lines", "Same-bank direct lines",
+                                    case_studies$case_group, "Docking stations", "River Thames"),
+                   options = layersControlOptions(collapsed = FALSE)) |>
+  addLegend(position = "bottomright", colors = c(col_cross, col_same),
+            labels = c("Cross-river", "Same-bank"),
+            title = "Station relationship", opacity = 1) |>
+  addControl(html = "Thicker solid lines = higher detour ratio<br>Dashed lines = direct connections",
+             position = "bottomleft") |>
+  addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) |>
+  fitBounds(map_bounds[1], map_bounds[2], map_bounds[3], map_bounds[4]) |>
+  hideGroup(c("Cross-river direct lines", "Same-bank direct lines", case_studies$case_group))
+
+# Fit after the HTML widget has its actual display dimensions; preserve all routes.
+fig3 <- htmlwidgets::onRender(fig3, '
+  function(el, x, b) {
+    var map = this;
+    map.whenReady(function() {
+      map.invalidateSize();
+      map.fitBounds([[b[1], b[0]], [b[3], b[2]]], {padding: [28, 28]});
+    });
+  }', data = map_bounds)
+fig3
+```
+
+```{r export-figure-3}
+htmlwidgets::saveWidget(
+  fig3,
+  file = "outputs/fig03_route_explorer.html",
+  selfcontained = TRUE
+)
+```
+
+
+```{r figure-4-network-efficiency, fig.width=12, fig.height=6}
+plot_data <- routes_sf |>
+  st_drop_geometry() |>
+  mutate(
+    relationship = factor(
+      relationship,
+      levels = c("Same-bank", "Cross-river")
+    )
+  )
+
+median_labels <- plot_data |> group_by(distance_band, relationship) |>
+  summarise(detour_ratio = median(detour_ratio), .groups = "drop")
+
+# Offset the labels horizontally from the jittered observations.
+fig4 <- ggplot(
+  plot_data,
+  aes(
+    x = relationship,
+    y = detour_ratio,
+    colour = relationship
+  )
+) +
+
+  # Perfectly direct connection reference
+  geom_hline(
+    yintercept = 1,
+    linetype = "dashed",
+    colour = col_same,
+    alpha = 0.5
+  ) +
+
+  # Individual modelled cycling connections
+  geom_point(
+    position = position_jitter(
+      width = 0.12,
+      height = 0,
+      seed = 476
+    ),
+    size = 3.5,
+    alpha = 0.8
+  ) +
+
+  # Group median
+  stat_summary(
+    fun = median,
+    geom = "point",
+    shape = 95,
+    size = 12
+  ) +
+
+  geom_text(data = median_labels,
+            aes(label = sprintf("%.2f×", detour_ratio)),
+            position = position_nudge(x = 0.19), hjust = 0,
+            fontface = "bold", size = 3.4, show.legend = FALSE) +
+
+  scale_x_discrete(expand = expansion(add = c(0.45, 0.85))) +
+
+  # Separate panels for comparable distances
+  facet_wrap(~distance_band, nrow = 1) +
+
+  scale_colour_manual(
+    values = c(
+      "Same-bank" = col_same,
+      "Cross-river" = col_cross
+    )
+  ) +
+
+  scale_y_continuous(
+    breaks = function(x) sort(unique(c(1, pretty(x, n = 5)))),
+    labels = function(x) paste0(x, "×")
+  ) +
+
+  labs(
+    title = if (all(band_comparison$detour_gap > 0))
+      "Cross-river connections show greater median detours" else
+      "Network detours by station relationship",
+    subtitle = paste0(
+      nrow(plot_data),
+      " modelled connections | Five per group and distance band"
+    ),
+    x = NULL,
+    y = "Network detour ratio",
+    caption = paste0(
+      "Points represent individual station pairs; ",
+      "horizontal markers and labels show group medians.\n",
+      "Dashed line: a perfectly direct connection (1.00×).\n",
+      "Sources: TfL Santander Cycles | ",
+      "OpenStreetMap | OSRM bicycle routing"
+    )
+  ) +
+
+  theme_minimal(base_size = 12) +
+
+  theme(
+    plot.background = element_rect(
+      fill = col_background,
+      colour = NA
+    ),
+    panel.background = element_rect(
+      fill = col_background,
+      colour = NA
+    ),
+    plot.title = element_text(
+      size = 22,
+      face = "bold",
+      colour = col_station
+    ),
+    plot.subtitle = element_text(
+      colour = col_same,
+      margin = margin(b = 15)
+    ),
+    plot.caption = element_text(
+      colour = col_same,
+      hjust = 0,
+      size = 9,
+      margin = margin(t = 15)
+    ),
+    strip.text = element_text(
+      face = "bold",
+      colour = col_station,
+      size = 12
+    ),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.spacing = grid::unit(1.5, "lines"),
+    legend.position = "none",
+    plot.margin = margin(20, 20, 20, 20)
+  )
+
+fig4
+```
+
+```{r export-final-network-analysis}
+# Export analytical figure
+ggsave(
+  filename = "outputs/fig04_network_efficiency.png",
+  plot = fig4,
+  width = 12,
+  height = 6,
+  dpi = 300
+)
+
+# Save routes including river-crossing classifications
+saveRDS(
+  routes_sf,
+  "data/processed/network_routes.rds"
+)
+
+# Export comparative findings
+readr::write_csv(
+  band_summary,
+  "outputs/distance_band_summary.csv"
+)
+
+readr::write_csv(
+  crossing_summary,
+  "outputs/river_crossing_summary.csv"
+)
+
+# Inspect available outputs
+list.files("outputs")
+
+ggsave("outputs/web/fig04_network_efficiency.png", fig4,
+       width = 12, height = 6, dpi = 160)
+readr::write_csv(network_summary, "outputs/network_summary.csv")
+readr::write_csv(band_comparison, "outputs/distance_band_comparison.csv")
+readr::write_csv(snap_sensitivity, "outputs/snapping_sensitivity.csv")
+readr::write_csv(case_studies, "outputs/route_case_studies.csv")
+readr::write_csv(demand_screen, "outputs/sampled_connection_screen.csv")
+saveRDS(list(network_summary = network_summary, band_summary = band_summary,
+             band_comparison = band_comparison, case_studies = case_studies,
+             crossing_summary = crossing_summary, snap_sensitivity = snap_sensitivity,
+             route_quality = route_quality), "data/processed/network_summary.rds")
+```
+
+## Interpretation
+
+The group medians describe the sampled routes, not all journeys. Distance bands reduce but do not remove imbalance in direct distance; the band comparison reports the remaining differences. The two case studies illustrate route indirectness on both sides of the Thames. The modelled routes do not establish actual cyclist paths, the effect of a new bridge or the causal contribution of the river. The screening table flags connections above both sample medians within a distance band. These are relative screening thresholds among the ten sampled connections per band, not investment criteria.
+
+```{r prepare-portfolio-outputs}
+# Save interactive map for the final portfolio document
+saveRDS(
+  fig3,
+  "data/processed/route_explorer.rds"
+)
+
+# Verify that all final figures have been exported
+required_outputs <- c(
+  "outputs/fig01_cycling_network.png",
+  "outputs/fig02_cross_river_flows.png",
+  "outputs/fig03_route_explorer.html",
+  "outputs/fig04_network_efficiency.png",
+  "outputs/web/fig01_cycling_network.png",
+  "outputs/web/fig02_cross_river_flows.png",
+  "outputs/web/fig04_network_efficiency.png"
+)
+
+data.frame(
+  file = required_outputs,
+  available = file.exists(required_outputs)
+)
+stopifnot(all(file.exists(required_outputs)))
+```

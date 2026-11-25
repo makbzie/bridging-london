@@ -1,0 +1,639 @@
+---
+title: "Bridging London | Data Preparation"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+---
+## Overview
+
+This document establishes the data foundation for Bridging London, a spatial analysis of how the River Thames influences cycling connectivity across London’s Santander Cycles network. Using R, docking station locations are retrieved from the Transport for London (TfL) API, historical journey records are imported, and river geometry is sourced from the Greater London Authority (GLA). The workflow inspects spatial data structures, coordinate reference systems and geometry validity before testing bicycle routing using the Open Source Routing Machine (OSRM). Together, these steps establish a reproducible foundation for subsequent origin–destination analysis, network distance calculations and comparisons of cycling connectivity across the Thames.
+
+
+```{r setup, message=FALSE, warning=FALSE}
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(readr)
+library(sf)
+library(osrm)
+library(ggplot2)
+library(leaflet)
+library(stplanr)
+```
+
+```{r download-docking-stations}
+station_url <- "https://api.tfl.gov.uk/BikePoint"
+station_file <- "data/raw/bikepoints.json"
+
+# Download once and retain the original API response
+if (!file.exists(station_file)) {
+  response <- GET(station_url)
+  stop_for_status(response)
+
+  writeBin(content(response, as = "raw"), station_file)
+}
+
+# Import JSON into R
+stations_raw <- fromJSON(station_file)
+
+# Inspect the dataset
+dim(stations_raw)
+names(stations_raw)
+
+head(stations_raw[c("id", "commonName", "lat", "lon")])
+```
+```{r inspect-journeys}
+journey_files <- list.files(
+  "data/raw/journeys",
+  pattern = "\\.csv$",
+  full.names = TRUE
+)
+
+# Confirm that journey files are available
+print(journey_files)
+stopifnot(length(journey_files) > 0)
+
+# Inspect the structure of the first file
+journey_sample <- read_csv(
+  journey_files[1],
+  n_max = 10,
+  show_col_types = FALSE
+)
+
+names(journey_sample)
+glimpse(journey_sample)
+```
+```{r download-thames}
+thames_file <- "data/raw/thames.geojson"
+
+# Greater London Authority River Thames dataset
+thames_url <- paste0(
+  "https://gis.london.gov.uk/arcgis/rest/services/",
+  "apps/webmap_context_layer/MapServer/1/query",
+  "?where=1%3D1&outFields=*&returnGeometry=true",
+  "&outSR=4326&f=geojson"
+)
+
+# Download and store locally
+if (!file.exists(thames_file)) {
+  download.file(thames_url, thames_file, mode = "wb")
+}
+
+# Import as an sf object
+thames_raw <- st_read(thames_file)
+```
+```{r inspect-thames}
+# Inspect geometry and spatial coverage
+st_geometry_type(thames_raw)
+st_crs(thames_raw)
+st_bbox(thames_raw)
+
+# Check geometry validity
+table(st_is_valid(thames_raw))
+
+# Visual inspection
+plot(
+  st_geometry(thames_raw),
+  col = "#82B5D1",
+  border = NA
+)
+```
+
+```{r test-cycling-route}
+# Configure OSRM for bicycle routing
+options(
+  osrm.server = "https://routing.openstreetmap.de/",
+  osrm.profile = "bike"
+)
+
+# Test locations on opposite sides of the Thames
+origin <- c(-0.1275, 51.5074)
+destination <- c(-0.1130, 51.5033)
+
+# Calculate a cycling route
+test_route <- osrmRoute(
+  src = origin,
+  dst = destination,
+  overview = "full"
+)
+
+print(test_route)
+```
+
+```{r visualise-test-route}
+route_bbox <- st_bbox(st_transform(test_route, 4326))
+
+leaflet() |>
+  
+  # Muted contextual basemap
+  addTiles(
+    options = tileOptions(opacity = 0.35)
+  ) |>
+  
+  # River Thames
+  addPolygons(
+    data = st_transform(thames_raw, 4326),
+    fillColor = "#82B5D1",
+    fillOpacity = 0.25,
+    stroke = FALSE
+  ) |>
+  
+  # White outline underneath the route
+  addPolylines(
+    data = st_transform(test_route, 4326),
+    color = "#FFFFFF",
+    weight = 8,
+    opacity = 1
+  ) |>
+  
+  # Cycling route
+  addPolylines(
+    data = st_transform(test_route, 4326),
+    color = "#D97706",
+    weight = 5,
+    opacity = 1
+  ) |>
+  
+  # Origin and destination
+  addCircleMarkers(
+    lng = c(origin[1], destination[1]),
+    lat = c(origin[2], destination[2]),
+    radius = 7,
+    color = "#FFFFFF",
+    weight = 2,
+    fillColor = "#173F5F",
+    fillOpacity = 1,
+    label = c("Origin", "Destination")
+  ) |>
+  
+  fitBounds(
+    lng1 = as.numeric(route_bbox["xmin"]) - 0.003,
+    lat1 = as.numeric(route_bbox["ymin"]) - 0.003,
+    lng2 = as.numeric(route_bbox["xmax"]) + 0.003,
+    lat2 = as.numeric(route_bbox["ymax"]) + 0.003
+  )
+```
+
+```{r inspect-inputs}
+# Journey files and available variables
+journey_files
+names(journey_sample)
+glimpse(journey_sample)
+
+# Docking station identifiers and coordinates
+head(stations_raw[c("id", "commonName", "lat", "lon")])
+
+# Thames geometry validation
+st_crs(thames_raw)
+st_is_valid(thames_raw)
+```
+
+## Data Cleaning and Preparation
+
+The following steps standardise docking station records, inspect and combine the historical journey extracts, and prepare the datasets for origin–destination analysis.
+
+```{r clean-stations}
+stations <- stations_raw |>
+  transmute(
+    bikepoint_id = id,
+    station_name = commonName,
+    longitude = lon,
+    latitude = lat
+  )
+
+# Inspect the cleaned dataset
+glimpse(stations)
+
+# Check for missing values
+colSums(is.na(stations))
+
+# Check for duplicate station identifiers
+sum(duplicated(stations$bikepoint_id))
+```
+
+```{r inspect-station-identifiers}
+head(stations)
+
+# Inspect additional station metadata
+stations_raw$additionalProperties[[1]]
+```
+
+```{r create-spatial-stations}
+# Ensure valid coordinates and unique identifiers
+stopifnot(
+  !anyNA(stations),
+  !anyDuplicated(stations$bikepoint_id),
+  all(abs(stations$longitude) <= 180),
+  all(abs(stations$latitude) <= 90)
+)
+
+# Convert coordinates into point geometries
+stations_sf <- st_as_sf(
+  stations,
+  coords = c("longitude", "latitude"),
+  crs = 4326,
+  remove = FALSE
+)
+
+# Transform to British National Grid
+stations_bng <- st_transform(stations_sf, 27700)
+
+# Inspect the spatial dataset
+print(stations_bng)
+```
+
+```{r inspect-station-distribution}
+leaflet(stations_sf) |>
+  addTiles(
+    options = tileOptions(opacity = 0.35)
+  ) |>
+  addCircleMarkers(
+    radius = 3,
+    stroke = FALSE,
+    fillColor = "#173F5F",
+    fillOpacity = 0.8,
+    label = ~station_name
+  )
+```
+
+```{r check-journey-headers}
+journey_headers <- lapply(
+  journey_files,
+  function(file) {
+    names(read_csv(
+      file,
+      n_max = 0,
+      show_col_types = FALSE
+    ))
+  }
+)
+
+# Inspect the column names of each file
+journey_headers
+
+# Check consistency between files
+stopifnot(
+  all(vapply(
+    journey_headers,
+    identical,
+    logical(1),
+    journey_headers[[1]]
+  ))
+)
+```
+
+```{r import-journeys}
+# Retain filenames for data provenance
+names(journey_files) <- basename(journey_files)
+
+journeys_raw <- bind_rows(
+  lapply(
+    journey_files,
+    function(file) {
+      read_csv(
+        file,
+        col_types = cols(.default = col_character())
+      )
+    }
+  ),
+  .id = "source_file"
+)
+
+# Inspect combined dataset
+dim(journeys_raw)
+glimpse(journeys_raw)
+
+# Number of records from each file
+count(journeys_raw, source_file)
+```
+
+```{r extract-terminal-identifiers}
+# Extract TerminalName from each station's metadata
+terminal_ids <- vapply(
+  stations_raw$additionalProperties,
+  function(x) {
+    value <- x$value[which(x$key == "TerminalName")]
+
+    if (length(value) == 1) {
+      return(as.character(value))
+    }
+
+    return(NA_character_)
+  },
+  FUN.VALUE = character(1)
+)
+
+# Add the historical station identifier
+stopifnot(identical(stations$bikepoint_id, stations_raw$id))
+
+stations <- stations |>
+  mutate(station_id = trimws(terminal_ids))
+
+# Inspect the result
+head(stations)
+
+# Check identifier quality
+sum(is.na(stations$station_id))
+sum(duplicated(stations$station_id))
+```
+
+```{r update-spatial-stations}
+# Retain stations with usable terminal identifiers
+stations <- stations |>
+  filter(!is.na(station_id), station_id != "")
+
+# Ensure terminal identifiers are unique
+stopifnot(!anyDuplicated(stations$station_id))
+
+# Rebuild spatial objects with the new identifier
+stations_sf <- st_as_sf(
+  stations,
+  coords = c("longitude", "latitude"),
+  crs = 4326,
+  remove = FALSE
+)
+
+stations_bng <- st_transform(stations_sf, 27700)
+```
+
+```{r clean-journeys}
+# Remove exact duplicate records across source files
+duplicate_rows <- duplicated(
+  journeys_raw[setdiff(names(journeys_raw), "source_file")]
+)
+
+journeys <- journeys_raw[!duplicate_rows, ] |>
+  transmute(
+    journey_id = Number,
+    start_date = as.Date(substr(`Start date`, 1, 10)),
+    origin_id = trimws(`Start station number`),
+    destination_id = trimws(`End station number`),
+    origin_name = `Start station`,
+    destination_name = `End station`,
+    duration_min = as.numeric(`Total duration (ms)`) / 60000,
+    source_file = source_file
+  )
+
+# Inspect cleaned records
+glimpse(journeys)
+
+# Data quality checks
+sum(duplicate_rows)
+colSums(is.na(journeys))
+sum(duplicated(journeys$journey_id))
+range(journeys$start_date, na.rm = TRUE)
+```
+
+```{r validate-station-matching}
+journeys <- journeys |>
+  mutate(
+    origin_matched = origin_id %in% stations$station_id,
+    destination_matched = destination_id %in% stations$station_id
+  )
+
+# Calculate matching success
+matching_summary <- journeys |>
+  summarise(
+    total_journeys = n(),
+    matched_origins = sum(origin_matched),
+    matched_destinations = sum(destination_matched),
+    fully_matched = sum(origin_matched & destination_matched),
+    match_rate = mean(
+      origin_matched & destination_matched
+    ) * 100
+  )
+
+matching_summary
+```
+
+```{r inspect-unmatched-stations}
+# Unmatched origins
+journeys |>
+  filter(!origin_matched) |>
+  count(origin_id, origin_name, sort = TRUE) |>
+  head(10)
+
+# Unmatched destinations
+journeys |>
+  filter(!destination_matched) |>
+  count(destination_id, destination_name, sort = TRUE) |>
+  head(10)
+```
+
+```{r filter-journeys}
+# Confirm unique journey identifiers
+stopifnot(
+  !anyNA(journeys$journey_id),
+  !anyDuplicated(journeys$journey_id)
+)
+
+journeys_clean <- journeys |>
+  filter(
+    start_date >= as.Date("2026-03-01"),
+    start_date <= as.Date("2026-03-31"),
+    origin_matched,
+    destination_matched,
+    origin_id != destination_id
+  ) |>
+  mutate(
+    duration_min = if_else(
+      duration_min > 0 & is.finite(duration_min),
+      duration_min,
+      NA_real_
+    )
+  )
+
+# Compare before and after cleaning
+data.frame(
+  original_records = nrow(journeys_raw),
+  retained_records = nrow(journeys_clean),
+  excluded_records = nrow(journeys_raw) - nrow(journeys_clean)
+)
+```
+
+```{r resolve-station-discrepancies}
+# Combine historical origin and destination station names
+historical_stations <- bind_rows(
+  journeys_clean |>
+    select(
+      station_id = origin_id,
+      historical_name = origin_name
+    ),
+  journeys_clean |>
+    select(
+      station_id = destination_id,
+      historical_name = destination_name
+    )
+) |>
+  distinct()
+
+# Identify inconsistent station names
+station_discrepancies <- historical_stations |>
+  inner_join(
+    stations |>
+      select(station_id, station_name),
+    by = "station_id"
+  ) |>
+  filter(
+    tolower(trimws(historical_name)) !=
+      tolower(trimws(station_name))
+  )
+
+print(station_discrepancies)
+
+# Identify ambiguous station IDs
+excluded_ids <- unique(station_discrepancies$station_id)
+
+# Record journey count before exclusion
+n_before <- nrow(journeys_clean)
+
+# Exclude affected journeys
+journeys_clean <- journeys_clean |>
+  filter(
+    !origin_id %in% excluded_ids,
+    !destination_id %in% excluded_ids
+  )
+
+# Report impact of additional cleaning
+data.frame(
+  ambiguous_stations = length(excluded_ids),
+  additional_exclusions = n_before - nrow(journeys_clean),
+  retained_journeys = nrow(journeys_clean)
+)
+```
+
+## Methodological decision
+
+Historical journey records were cross-referenced against current docking station names to identify inconsistencies arising from the temporal mismatch between datasets. Journeys associated with ambiguous station identifiers were excluded to minimise the risk of assigning incorrect geographical coordinates during subsequent network analysis.
+
+
+```{r aggregate-od-pairs}
+od_pairs <- journeys_clean |>
+  group_by(origin_id, destination_id) |>
+  summarise(
+    journeys = n(),
+    mean_duration_min = mean(duration_min, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    mean_duration_min = if_else(
+      is.nan(mean_duration_min),
+      NA_real_,
+      mean_duration_min
+    )
+  ) |>
+  arrange(desc(journeys))
+
+# Inspect the busiest station pairs
+head(od_pairs, 10)
+
+# Number of unique directional relationships
+nrow(od_pairs)
+
+# Confirm all retained journeys are accounted for
+stopifnot(
+  sum(od_pairs$journeys) == nrow(journeys_clean)
+)
+```
+
+```{r join-station-coordinates}
+od_pairs <- od_pairs |>
+  left_join(
+    stations |>
+      select(
+        origin_id = station_id,
+        origin_name = station_name,
+        origin_lon = longitude,
+        origin_lat = latitude
+      ),
+    by = "origin_id"
+  ) |>
+  left_join(
+    stations |>
+      select(
+        destination_id = station_id,
+        destination_name = station_name,
+        destination_lon = longitude,
+        destination_lat = latitude
+      ),
+    by = "destination_id"
+  )
+
+# Validate the completed dataset
+glimpse(od_pairs)
+colSums(is.na(od_pairs))
+
+stopifnot(
+  sum(od_pairs$journeys) == nrow(journeys_clean)
+)
+```
+
+```{r export-processed-data}
+# Spatial station datasets
+saveRDS(
+  stations_sf,
+  "data/processed/stations_wgs84.rds"
+)
+
+saveRDS(
+  stations_bng,
+  "data/processed/stations_bng.rds"
+)
+
+# Aggregated origin-destination dataset
+saveRDS(
+  od_pairs,
+  "data/processed/od_pairs.rds"
+)
+
+# River Thames in British National Grid
+saveRDS(
+  st_transform(thames_raw, 27700),
+  "data/processed/thames_bng.rds"
+)
+
+# Confirm exported files
+list.files("data/processed")
+```
+
+```{r final-data-summary}
+# Summarise the final analytical datasets
+data.frame(
+  metric = c(
+    "Raw journey records",
+    "Duplicate records",
+    "Retained journeys",
+    "Docking stations",
+    "Unique OD pairs",
+    "Station matching rate (%)",
+    "Journey retention rate (%)"
+  ),
+  value = c(
+    nrow(journeys_raw),
+    sum(duplicate_rows),
+    nrow(journeys_clean),
+    nrow(stations),
+    nrow(od_pairs),
+    round(matching_summary$match_rate, 2),
+    round(nrow(journeys_clean) /
+            nrow(journeys_raw) * 100, 2)
+  )
+)
+```
+
+```{r validate-station-names}
+journeys |>
+  distinct(origin_id, origin_name) |>
+  inner_join(
+    stations |>
+      select(station_id, station_name),
+    by = c("origin_id" = "station_id")
+  ) |>
+  filter(
+    tolower(trimws(origin_name)) !=
+      tolower(trimws(station_name))
+  )
+```
+

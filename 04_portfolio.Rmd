@@ -1,0 +1,261 @@
+---
+title: "Bridging London"
+subtitle: "How does the Thames shape cycling connectivity?"
+output:
+  html_document:
+    theme: flatly
+    self_contained: true
+    toc: false
+---
+
+```{r setup, include=FALSE}
+library(sf)
+library(dplyr)
+library(leaflet)
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
+                      error = FALSE, out.width = "100%", fig.align = "center")
+
+# Read outputs from the analytical documents; no live routing or processing.
+required <- c(
+  stations = "data/processed/stations_classified.rds",
+  od = "data/processed/od_classified.rds",
+  spatial_summary = "data/processed/spatial_summary.rds",
+  routes = "data/processed/network_routes.rds",
+  network_summary = "data/processed/network_summary.rds",
+  explorer = "data/processed/route_explorer.rds",
+  figure1 = "outputs/web/fig01_cycling_network.png",
+  figure2 = "outputs/web/fig02_cross_river_flows.png",
+  figure4 = "outputs/web/fig04_network_efficiency.png"
+)
+missing_files <- required[!file.exists(required)]
+if (length(missing_files)) {
+  stop("Missing revised portfolio inputs. Knit 02 and 03 first: ",
+       paste(missing_files, collapse = ", "))
+}
+stations <- readRDS(required[["stations"]])
+od <- readRDS(required[["od"]])
+spatial <- readRDS(required[["spatial_summary"]])
+routes <- st_drop_geometry(readRDS(required[["routes"]]))
+network <- readRDS(required[["network_summary"]])
+route_explorer <- readRDS(required[["explorer"]])
+
+fmt_n <- function(x) format(x, big.mark = ",", scientific = FALSE, trim = TRUE)
+fmt_num <- function(x) sprintf("%.2f", x)
+fmt_pct <- function(x) sprintf("%.1f%%", x)
+fmt_ratio <- function(x) paste0(fmt_num(x), "×")
+n_journeys <- sum(od$journeys)
+n_stations <- nrow(stations)
+n_routes <- nrow(routes)
+
+# Validate that the final saved summaries match the analytical datasets.
+stopifnot(n_routes == 30L, all(is.finite(routes$detour_ratio)),
+          all(routes$relationship %in% c("Same-bank", "Cross-river")),
+          !anyDuplicated(routes$route_id),
+          sum(spatial$station_banks$stations) == n_stations,
+          sum(spatial$flow_summary$total_journeys) == n_journeys,
+          sum(spatial$bank_flows$total_journeys) == n_journeys,
+          sum(network$band_summary$routes) == n_routes)
+
+bank_counts <- spatial$station_banks
+north_n <- sum(bank_counts$stations[bank_counts$bank == "North"])
+south_n <- sum(bank_counts$stations[bank_counts$bank == "South"])
+unknown_n <- sum(bank_counts$stations[bank_counts$bank == "Unclassified"])
+cross_journeys <- sum(od$journeys[od$relationship == "Cross-river"])
+cross_share <- 100 * cross_journeys / n_journeys
+unknown_journeys <- sum(od$journeys[od$relationship == "Unclassified"])
+flow <- spatial$concentration
+stopifnot(flow$total_cross_journeys == cross_journeys,
+          nrow(spatial$mapped_hubs) >= 1L, nrow(spatial$all_hubs) >= 1L)
+leading_mapped <- spatial$mapped_hubs[1, ]
+leading_all <- spatial$all_hubs[1, ]
+north_to_south <- sum(spatial$bank_flows$total_journeys[
+  spatial$bank_flows$origin_bank == "North" & spatial$bank_flows$destination_bank == "South"])
+south_to_north <- sum(spatial$bank_flows$total_journeys[
+  spatial$bank_flows$origin_bank == "South" & spatial$bank_flows$destination_bank == "North"])
+stopifnot(north_to_south + south_to_north == cross_journeys)
+
+cross_routes <- routes |> filter(relationship == "Cross-river")
+same_routes <- routes |> filter(relationship == "Same-bank")
+cross_median <- median(cross_routes$detour_ratio)
+same_median <- median(same_routes$detour_ratio)
+stopifnot(nrow(cross_routes) == 15L, nrow(same_routes) == 15L)
+
+band_check <- routes |> count(distance_band, relationship)
+stopifnot(nrow(band_check) == 6L, all(band_check$n == 5L))
+band_comparison <- network$band_comparison
+n_higher <- sum(band_comparison$detour_gap > 0)
+largest_gap <- band_comparison[which.max(band_comparison$detour_gap), ]
+imbalance <- band_comparison[which.max(abs(band_comparison$direct_gap_km)), ]
+
+case_a <- network$case_studies |> filter(relationship == "Cross-river")
+case_b <- network$case_studies |> filter(relationship == "Same-bank")
+stopifnot(nrow(case_a) == 1L, nrow(case_b) == 1L,
+          all(network$case_studies$route_id %in% routes$route_id))
+case_text <- function(x) paste0(x$origin_name, " → ", x$destination_name)
+
+n_double <- sum(same_routes$river_crossings >= 2, na.rm = TRUE)
+n_same_known <- sum(!is.na(same_routes$river_crossings))
+n_cross_once <- sum(cross_routes$river_crossings == 1, na.rm = TRUE)
+n_cross_known <- sum(!is.na(cross_routes$river_crossings))
+n_unknown_crossings <- sum(is.na(routes$river_crossings))
+snap_flags <- sum(network$route_quality$flag, na.rm = TRUE)
+```
+
+<style>
+body { background: #fff; color: #283b4b; font-size: 16px; line-height: 1.7; }
+.main-container { max-width: 1040px !important; padding: 30px 30px 48px; }
+#header { border-top: 5px solid #173F5F; padding-top: 24px; margin-bottom: 18px; }
+h1.title { font-size: clamp(38px, 6vw, 62px); color: #173F5F; font-weight: 750; letter-spacing: -1.6px; margin: 0 0 8px; line-height: 1.08; }
+h3.subtitle { color: #64748B; font-size: 23px; font-weight: 400; margin: 0; line-height: 1.35; }
+h2 { color: #173F5F; font-size: 26px; font-weight: 700; margin-top: 38px; border-top: 1px solid #e1e5e8; padding-top: 22px; }
+h3 { color: #173F5F; font-size: 19px; }
+a { color: #173F5F; text-decoration: underline; text-underline-offset: 3px; }
+p { margin-bottom: 14px; }
+.eyebrow {
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  margin: 12px 0 18px;
+}
+
+.eyebrow a {
+  color: #64748B;
+  text-decoration: none;
+}
+
+.eyebrow a:hover {
+  text-decoration: underline;
+}
+.project-nav { font-size: 14px; margin: 0 0 18px; }
+.lead-copy { max-width: 850px; font-size: 17px; line-height: 1.65; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 22px 0 10px; }
+.metric { border-top: 3px solid #173F5F; background: #F5F5F2; padding: 15px 13px 13px; }
+.metric.cross { border-top-color: #D97706; }
+.metric.same { border-top-color: #64748B; }
+.metric-value { font-size: clamp(23px, 3vw, 34px); font-weight: 750; line-height: 1.15; color: #173F5F; font-variant-numeric: tabular-nums; }
+.metric.cross .metric-value { color: #a75304; }
+.metric.same .metric-value { color: #526479; }
+.metric-label { margin-top: 7px; font-size: 13px; line-height: 1.4; color: #526479; }
+.metric-note, .map-hint { color: #526479; font-size: 13px; }
+img { max-width: 100%; height: auto; }
+.leaflet.html-widget { border: 1px solid #e1e5e8; border-radius: 3px; margin: 12px 0 20px; }
+.case-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 18px 0 12px; }
+.case { border-left: 3px solid #64748B; background: #F5F5F2; padding: 14px 16px; }
+.case.cross { border-left-color: #D97706; }
+.case-title { font-size: 13px; font-weight: 700; color: #526479; }
+.case-name { font-size: 16px; font-weight: 700; color: #173F5F; margin: 5px 0; line-height: 1.4; }
+.case-metrics { font-size: 15px; margin: 5px 0; }
+.case-note { font-size: 13px; color: #526479; }
+.source-list { font-size: 14px; line-height: 1.65; }
+.source-list a { white-space: normal; }
+.footer-note { border-top: 1px solid #e1e5e8; padding-top: 15px; margin-top: 35px; font-size: 12px; color: #526479; }
+@media (max-width: 780px) { .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 560px) { .main-container { padding: 20px 16px 32px; } .case-grid { grid-template-columns: 1fr; } h2 { font-size: 23px; } .metric { padding: 12px 10px; } }
+</style>
+
+<div class="eyebrow">
+Mak Zie / MSc Geographic Data Science /
+<a href="mailto:m.b.zie@lse.ac.uk">m.b.zie@lse.ac.uk</a>
+</div>
+
+<div class="project-nav"><a href="#route-explorer">Explore routes</a> · <a href="#findings">Key findings</a> · <a href="#data-and-reproducibility">Methods and source code</a></div>
+
+<div class="lead-copy">
+
+Geographical proximity does not necessarily mean easy access by bicycle. Using Santander Cycles journey records and modelled bicycle routes, this project explores where the Thames separates observed demand from direct network connectivity, with active travel planning as the motivating application.
+
+</div>
+
+```{r headline-metrics, results='asis'}
+# Generate one unindented HTML block so Pandoc does not treat nested cards as code.
+metric <- function(value, label, class = "") {
+  paste0('<div class="metric ', class, '"><div class="metric-value">', value,
+         '</div><div class="metric-label">', label, '</div></div>')
+}
+cat("\n\n", '<div class="metrics">',
+    metric(fmt_n(n_journeys), "Retained journeys<br>March 2026"),
+    metric(fmt_pct(cross_share), "Journeys linking<br>opposite banks"),
+    metric(fmt_ratio(cross_median), "Median detour<br>15 cross-river routes", "cross"),
+    metric(fmt_ratio(same_median), "Median detour<br>15 same-bank routes", "same"),
+    '</div>', "\n\n", sep = "")
+```
+
+<div class="metric-note">Journey totals describe the full retained dataset; detour estimates describe 30 sampled modelled routes, not all journeys.</div>
+
+## 01 — A network shaped by London's geography
+
+Of the `r fmt_n(n_stations)` docking station locations in the November 2026 snapshot, `r fmt_n(north_n)` (`r fmt_pct(100*north_n/n_stations)`) were on the north bank and `r fmt_n(south_n)` (`r fmt_pct(100*south_n/n_stations)`) on the south bank.`r if (unknown_n > 0) paste0(" A further ", fmt_n(unknown_n), " could not be classified.") else ""` This distribution describes infrastructure availability, not coverage relative to population or demand.
+
+```{r figure-1, fig.alt="Map of Santander Cycles docking station locations in central London and the River Thames, with contextual OpenStreetMap basemap."}
+knitr::include_graphics(required[["figure1"]])
+```
+
+## 02 — Where cross-river cycling demand concentrates
+
+March records contain `r fmt_n(north_to_south)` north-to-south and `r fmt_n(south_to_north)` south-to-north journeys. The `r fmt_n(flow$mapped_pairs)` busiest undirected connections account for `r fmt_pct(flow$mapped_share_pct)` of retained opposite-bank journeys. **`r leading_mapped$station_name`** is the leading endpoint within these mapped connections (`r fmt_n(leading_mapped$endpoint_journeys)` journeys).`r if (leading_mapped$station_id == leading_all$station_id) " It also ranks first across the full cross-river network." else paste0(" Across the full cross-river network, the leading endpoint is ", leading_all$station_name, ".")` `r if (unknown_journeys > 0) paste0(" The bank relationship is unknown for ", fmt_n(unknown_journeys), " retained journeys.") else ""`
+
+```{r figure-2, fig.alt="Map of the busiest 40 undirected station connections across the Thames, with line width representing recorded journey totals and labels for the three busiest mapped endpoints."}
+knitr::include_graphics(required[["figure2"]])
+```
+
+The lines connect observed journey endpoints, not the bridges or paths cyclists used.
+
+## 03 — When geographical proximity is misleading {#route-explorer}
+
+The two highest-detour routes in the shortest distance band, one per group, illustrate substantial indirectness both across and away from the river.
+
+```{r route-cases, results='asis'}
+case_card <- function(x, label, class = "") {
+  paste0('<div class="case ', class, '"><div class="case-title">', label,
+    '</div><div class="case-name">', htmltools::htmlEscape(case_text(x)),
+    '</div><div class="case-metrics">', fmt_num(x$direct_km), ' km direct → ',
+    fmt_num(x$network_km), ' km by network<br><strong>', fmt_ratio(x$detour_ratio),
+    '</strong> detour ratio</div><div class="case-note">', fmt_n(x$journeys),
+    ' recorded journeys in this direction; ', fmt_n(x$both_directions_journeys),
+    ' in both directions combined.</div></div>')
+}
+cat("\n\n", '<div class="case-grid">', case_card(case_a, "Case A · Opposite banks", "cross"),
+    case_card(case_b, "Case B · Same bank"), '</div>', "\n\n", sep = "")
+```
+
+These deliberately selected extremes are illustrations, not typical routes or evidence of high-demand investment priorities. The modelled paths deviate up to `r fmt_n(round(case_a$max_offset_m))` m and `r fmt_n(round(case_b$max_offset_m))` m from their straight-line connections, respectively. The same-bank example shows that river crossings are not necessary for substantial detours; the route geometries alone cannot establish their causes.
+
+<div class="map-hint">Click routes for metrics. Thicker network lines indicate higher detour ratios. To inspect a case, enable its case layer and turn off the two general route layers; dashed lines show direct connections.</div>
+
+```{r figure-3, out.width="100%", fig.height=6.6}
+route_explorer
+```
+
+## 04 — Quantifying the cross-river detour {#findings}
+
+A detour ratio of 1.44× means the modelled route is 44% longer than the straight-line connection. Cross-river median ratios exceeded same-bank medians in `r n_higher` of three distance bands.`r if (n_higher > 0) paste0(" The largest difference was ", fmt_num(largest_gap$detour_gap), " in the ", as.character(largest_gap$distance_band), " band.") else ""`
+
+```{r figure-4, fig.alt="Faceted dot plot comparing detour ratios of five same-bank and five cross-river modelled routes in each of three distance bands, with labelled group medians."}
+knitr::include_graphics(required[["figure4"]])
+```
+
+The largest within-band difference in median direct distance was `r fmt_num(abs(imbalance$direct_gap_km))` km (`r as.character(imbalance$distance_band)`), so the comparison is not perfectly distance-matched. Of classified routes, `r n_cross_once`/`r n_cross_known` opposite-bank connections crossed once and `r n_double`/`r n_same_known` same-bank connections crossed twice or more.`r if (n_unknown_crossings > 0) paste0(" A further ", n_unknown_crossings, " routes had uncertain crossing counts.") else ""`
+
+## Implications for active travel
+
+Combining observed journey volumes with modelled detours could help screen connections for closer inspection of cycling infrastructure. The accompanying screening table flags connections above both sample medians for journey count and detour within each distance band; these are candidates for follow-up, not proposed bridge locations. Low recorded demand cannot distinguish limited accessibility from low underlying demand.
+
+## Method and limitations
+
+March 2026 journey records were linked to November station coordinates using TfL terminal identifiers; unmatched, ambiguous and same-station trips were excluded. Subtracting the Thames polygon from a study rectangle defined two banks. A stratified random sample of 30 distinct station pairs was modelled with OSRM's bicycle profile (one observed direction per pair, five routes per group and distance band).
+
+Small samples, within-band distance imbalance, route snapping and temporal mismatch limit inference. The route audit flags `r snap_flags` connections for endpoint or ratio review (50 m screening threshold or detour ratio below one). Neither causal effects nor actual cyclist paths can be inferred.
+
+## Data and reproducibility
+
+<div class="source-list">
+<p><strong>Tools:</strong> R, sf, dplyr, ggplot2, ggspatial, ggrepel, leaflet and OSRM.</p>
+<p><strong>Data:</strong> <a href="https://cycling.data.tfl.gov.uk/">TfL journey archive</a> · <a href="https://api.tfl.gov.uk/BikePoint">TfL BikePoint API</a> · <a href="https://gis.london.gov.uk/arcgis/rest/services/apps/webmap_context_layer/MapServer/1/query?where=1%3D1&amp;outFields=*&amp;returnGeometry=true&amp;outSR=4326&amp;f=geojson">GLA River Thames geometry</a> · <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · <a href="https://routing.openstreetmap.de/">Bicycle routing service</a>.</p>
+<p><strong>Source files:</strong> <a href="01_data_prep.Rmd">01 Data preparation</a> · <a href="02_spatial_analysis.Rmd">02 Spatial analysis</a> · <a href="03_network_analysis.Rmd">03 Network analysis</a>.</p>
+<p><strong>Analytical tables:</strong> <a href="outputs/station_bank_summary.csv">Station distribution</a> · <a href="outputs/bank_flow_summary.csv">Directional bank flows</a> · <a href="outputs/cross_river_station_hubs.csv">Cross-river station activity</a> · <a href="outputs/distance_band_comparison.csv">Distance-band comparisons</a> · <a href="outputs/sampled_connection_screen.csv">Sampled demand and detour screening</a> · <a href="outputs/route_quality.csv">Route quality audit</a>.</p>
+</div>
+
+<div class="footer-note">Independent portfolio project developed from GY476 Applied Geographical Information Systems, LSE. Journey period: March 2026; station snapshot and original routing: November 2026. Static maps use British National Grid; the interactive basemap requires internet access. The analytical documents and CSV links require the accompanying project files.</div>
