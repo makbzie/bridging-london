@@ -1,2 +1,5 @@
-index.html linguist-generated=true
-*.Rmd linguist-detectable=true
+# Exclude generated portfolio website
+*.html linguist-generated=true linguist-detectable=false
+
+# Include analytical R Markdown documents
+*.Rmd linguist-language=RMarkdown linguist-detectable=true
